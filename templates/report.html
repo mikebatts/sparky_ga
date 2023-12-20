@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analytics Report</title>
+</head>
+<body>
+    <h1>Google Analytics Report</h1>
+    <table>
+        <tr>
+            <th>City</th>
+            <th>Active Users</th>
+        </tr>
+        {% for row in report_data %}
+        <tr>
+            <td>{{ row.city }}</td>
+            <td>{{ row.activeUsers }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>

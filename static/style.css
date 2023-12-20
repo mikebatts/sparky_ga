@@ -1,0 +1,61 @@
+/* Reset some default styles */
+body, h1, p, button {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* Body and overall page styles */
+body {
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Container for content */
+.container {
+    width: 80%;
+    margin: auto;
+    overflow: hidden;
+}
+
+/* Header styles */
+h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Paragraph styles */
+p {
+    font-size: 1.1em;
+    margin-bottom: 20px;
+}
+
+/* Button styling */
+button {
+    display: block;
+    width: 200px;
+    padding: 10px;
+    margin: 20px auto;
+    background: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+button:hover {
+    background: #555;
+}
+
+/* Link styles */
+a {
+    color: #333;
+    text-decoration: none;
+}
+
+a:hover {
+    color: #000;
+}
