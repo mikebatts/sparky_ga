@@ -1,9 +1,15 @@
+# app.y
+
+from dotenv import load_dotenv
 import os
 import flask
 import google_auth_oauthlib.flow
 
+# Load environment variables from .env file
+load_dotenv()
+
 app = flask.Flask(__name__)
-app.secret_key = 'Sfogliatelle1209!'  # Replace with a strong secret key
+app.secret_key = os.getenv('FLASK_APP_SECRET_KEY')
 
 # Replace with the actual path to your client_secret.json
 CLIENT_SECRETS_FILE = os.environ.get("GOOGLE_CLIENT_SECRETS")
@@ -50,8 +56,19 @@ def oauth2callback():
         'client_id': credentials.client_id,
         'client_secret': credentials.client_secret,
         'scopes': credentials.scopes}
+    
+    # After fetching token
+    print("User has been authenticated successfully")
 
     return flask.redirect(flask.url_for('index'))
+
+@app.route('/logout')
+def logout():
+    # Clear session data
+    flask.session.pop('credentials', None)
+    print("User has been logged out")
+    return flask.redirect(flask.url_for('index'))
+
 
 if __name__ == '__main__':
     # When running locally, set 'OAUTHLIB_INSECURE_TRANSPORT' to enable non-HTTPS testing

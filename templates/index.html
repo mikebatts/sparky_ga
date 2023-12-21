@@ -6,7 +6,12 @@
 </head>
 <body>
     <h1>Welcome to Our Analytics App</h1>
-    <p>Click the button below to sign in with Google and select your Analytics account.</p>
-    <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
+    {% if 'credentials' in session %}
+        <p>You are currently signed in.</p>
+        <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
+    {% else %}
+        <p>Click the button below to sign in with Google and select your Analytics account.</p>
+        <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
+    {% endif %}
 </body>
 </html>
