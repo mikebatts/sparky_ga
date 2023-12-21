@@ -9,6 +9,32 @@
     {% if 'credentials' in session %}
         <p>You are currently signed in.</p>
         <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
+        {% if 'properties' in session %}
+        <form action="{{ url_for('fetch_data') }}" method="post">
+            <label for="property">Select a property:</label>
+            <select name="property_id" id="property" onchange="setPropertyType()">
+                {% for property in session['properties'] %}
+                    <option value="{{ property['property_id'] }}">{{ property['property_name'] }} ({{ property['property_type'] }} - {{ property['property_id'] }})</option>
+                {% endfor %}
+            </select>
+            <!-- Hidden field to store property type -->
+            <input type="hidden" name="property_type" id="property_type" value="">
+            <input type="submit" value="Fetch Data">
+        </form>
+        
+        <script>
+            function setPropertyType() {
+                var property = document.getElementById('property');
+                var selectedProperty = property.options[property.selectedIndex].text;
+                // Determine property type based on some identifier in the property name
+                var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
+                document.getElementById('property_type').value = propertyType;
+            }
+            // Initialize property type when the page loads
+            window.onload = setPropertyType;
+        </script>
+        
+        {% endif %}
     {% else %}
         <p>Click the button below to sign in with Google and select your Analytics account.</p>
         <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
