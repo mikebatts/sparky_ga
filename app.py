@@ -1,15 +1,4 @@
-# from dotenv import load_dotenv
-# from google.analytics.data_v1beta import BetaAnalyticsDataClient
-# from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric
-
-# from google.analytics.admin import AnalyticsAdminServiceClient
-# from google.analytics.admin_v1alpha.types import ListPropertiesRequest
-
-# from googleapiclient.discovery import build
-# import os
-# from flask import Flask, jsonify, render_template, redirect, url_for, session, request
-# import google_auth_oauthlib.flow
-# from google.oauth2 import credentials as google_credentials 
+##app.py
 
 from dotenv import load_dotenv
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
