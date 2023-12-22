@@ -1,15 +1,24 @@
+# from dotenv import load_dotenv
+# from google.analytics.data_v1beta import BetaAnalyticsDataClient
+# from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric
+
+# from google.analytics.admin import AnalyticsAdminServiceClient
+# from google.analytics.admin_v1alpha.types import ListPropertiesRequest
+
+# from googleapiclient.discovery import build
+# import os
+# from flask import Flask, jsonify, render_template, redirect, url_for, session, request
+# import google_auth_oauthlib.flow
+# from google.oauth2 import credentials as google_credentials 
+
 from dotenv import load_dotenv
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric
-
-from google.analytics.admin import AnalyticsAdminServiceClient
-from google.analytics.admin_v1alpha.types import ListPropertiesRequest
-
 from googleapiclient.discovery import build
 import os
 from flask import Flask, jsonify, render_template, redirect, url_for, session, request
 import google_auth_oauthlib.flow
-from google.oauth2 import credentials as google_credentials 
+from google.oauth2 import credentials as google_credentials
 
 # Load environment variables from .env file
 load_dotenv()
@@ -50,7 +59,6 @@ def oauth2callback():
 
     credentials = flow.credentials
     analytics = build('analytics', 'v3', credentials=credentials)
-    admin_client = AnalyticsAdminServiceClient(credentials=credentials)
 
     # Fetch UA properties
     accounts = analytics.management().accounts().list().execute()
@@ -72,17 +80,15 @@ def oauth2callback():
                                 'property_type': 'UA'
                             })
 
-    # Fetch GA4 properties using Admin API
-    admin_client = AnalyticsAdminServiceClient(credentials=credentials)
+    # Fetch GA4 properties using Data API
+    data_client = BetaAnalyticsDataClient(credentials=credentials)
     try:
-        # Use a filter to list all properties
-        ga4_properties_request = ListPropertiesRequest(filter="parent:accounts/-")
-        ga4_properties = admin_client.list_properties(ga4_properties_request)
-        for property in ga4_properties:
-            numeric_id = property.name.split('/')[-1]  # Extract the numeric part
+        # Listing all GA4 properties
+        ga4_properties = data_client.list_properties()
+        for property in ga4_properties.properties:
             properties_list.append({
-                'account_id': 'N/A',  # GA4 properties might not have a directly associated account ID
-                'property_id': numeric_id,  # Store only the numeric ID
+                'account_id': property.parent.split('/')[-1],
+                'property_id': property.name.split('/')[-1],
                 'property_name': property.display_name,
                 'property_type': 'GA4'
             })
