@@ -2,12 +2,15 @@
 
 from dotenv import load_dotenv
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
-from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric
+from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric, FilterExpression, Filter, NumericValue
 from googleapiclient.discovery import build
 import os
 from flask import Flask, jsonify, render_template, redirect, url_for, session, request
 import google_auth_oauthlib.flow
 from google.oauth2 import credentials as google_credentials
+
+from google.analytics.admin import AnalyticsAdminServiceClient
+from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 
 # Load environment variables from .env file
 load_dotenv()
@@ -37,6 +40,7 @@ def authorize():
 
 @app.route('/oauth2callback')
 def oauth2callback():
+    properties_list = []  # Initialize inside the function
     state = session['state']
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, 
@@ -50,37 +54,40 @@ def oauth2callback():
     analytics = build('analytics', 'v3', credentials=credentials)
 
     # Fetch UA properties
-    accounts = analytics.management().accounts().list().execute()
-    properties_list = []
-    if accounts.get('items'):
-        for account in accounts.get('items'):
-            account_id = account['id']
-            properties = analytics.management().webproperties().list(accountId=account_id).execute()
-            if properties.get('items'):
-                for property in properties.get('items'):
-                    profiles = analytics.management().profiles().list(accountId=account_id, webPropertyId=property['id']).execute()
-                    if profiles.get('items'):
-                        for profile in profiles.get('items'):
-                            properties_list.append({
-                                'account_id': account_id,
-                                'property_id': property['id'],
-                                'property_name': property['name'],
-                                'view_id': profile['id'],
-                                'property_type': 'UA'
-                            })
 
-    # Fetch GA4 properties using Data API
-    data_client = BetaAnalyticsDataClient(credentials=credentials)
+    # accounts = analytics.management().accounts().list().execute()
+    # properties_list = []
+    # if accounts.get('items'):
+    #     for account in accounts.get('items'):
+    #         account_id = account['id']
+    #         properties = analytics.management().webproperties().list(accountId=account_id).execute()
+    #         if properties.get('items'):
+    #             for property in properties.get('items'):
+    #                 profiles = analytics.management().profiles().list(accountId=account_id, webPropertyId=property['id']).execute()
+    #                 if profiles.get('items'):
+    #                     for profile in profiles.get('items'):
+    #                         properties_list.append({
+    #                             'account_id': account_id,
+    #                             'property_id': property['id'],
+    #                             'property_name': property['name'],
+    #                             'view_id': profile['id'],
+    #                             'property_type': 'UA'
+    #                         })
+
+      # Create an Admin API client
+    admin_client = AnalyticsAdminServiceClient(credentials=credentials)
+
+    # List GA4 properties
     try:
-        # Listing all GA4 properties
-        ga4_properties = data_client.list_properties()
-        for property in ga4_properties.properties:
-            properties_list.append({
-                'account_id': property.parent.split('/')[-1],
-                'property_id': property.name.split('/')[-1],
-                'property_name': property.display_name,
-                'property_type': 'GA4'
-            })
+        account_summaries = admin_client.list_account_summaries(ListAccountSummariesRequest())
+        for account in account_summaries.account_summaries:
+            for property_summary in account.property_summaries:
+                properties_list.append({
+                    'account_id': account.account,
+                    'property_id': property_summary.property,
+                    'property_name': property_summary.display_name,
+                    'property_type': 'GA4'
+                })
     except Exception as e:
         print(f"Error fetching GA4 properties: {e}")
 
@@ -98,57 +105,63 @@ def fetch_data():
     credentials = google_credentials.Credentials(**session['credentials'])
 
     if property_type == "GA4":
-        # Handle GA4 property
+        numeric_property_id = property_id.split('/')[-1]
+
+        # Update dimensions and metrics according to your new requirements
+        dimensions = [
+            Dimension(name="landingPage"),
+            Dimension(name="pagePath"),
+            Dimension(name="deviceCategory"),
+            Dimension(name="deviceModel"),
+            Dimension(name="brandingInterest"),
+            Dimension(name="region"),
+            Dimension(name="cityId")
+        ]
+
+        metrics = [
+            Metric(name="newUsers"),
+            Metric(name="totalUsers"),
+            Metric(name="checkouts"),
+            Metric(name="scrolledUsers"),
+            Metric(name="averageSessionDuration"),
+            Metric(name="bounceRate"),
+            Metric(name="engagementRate"),
+            Metric(name="sessions"),
+            Metric(name="conversions"),
+            Metric(name="screenPageViews")
+        ]
+
         client = BetaAnalyticsDataClient(credentials=credentials)
         ga4_request = RunReportRequest(
-            property=f"properties/{property_id}",  # Ensure numeric ID is used here
-            date_ranges=[DateRange(start_date="7daysAgo", end_date="today")],
-            dimensions=[Dimension(name="browser")],
-            metrics=[Metric(name="activeUsers")]
+            property=f"properties/{numeric_property_id}",
+            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+            dimensions=dimensions,
+            metrics=metrics,
+            # Update or remove filters based on your requirements
         )
         response = client.run_report(ga4_request)
-        return jsonify(response.to_dict())
 
-    elif property_type == "UA":
-        # Find view_id for the selected UA property
-        view_id = None
-        for prop in session.get('properties', []):  # Renamed variable here
-            if prop['property_id'] == property_id and prop['property_type'] == 'UA':
-                view_id = prop.get('view_id')
-
-        if not view_id:
-            return "No viewId found for UA property.", 400
-
-        # Handle UA property
-        analytics = build('analyticsreporting', 'v4', credentials=credentials)
-        ua_request_body = {  # Renamed variable here
-            'reportRequests': [
+        response_data = {
+            "dimension_headers": [dh.name for dh in response.dimension_headers],
+            "metric_headers": [mh.name for mh in response.metric_headers],
+            "rows": [
                 {
-                    'viewId': view_id,
-                    'dateRanges': [{'startDate': '30daysAgo', 'endDate': 'today'}],
-                    'metrics': [
-                        # Add as many metrics as required
-                        {'expression': 'ga:sessions'},
-                        {'expression': 'ga:users'},
-                        {'expression': 'ga:newUsers'},
-                        # ...
-                    ],
-                    'dimensions': [
-                        # Add as many dimensions as required
-                        {'name': 'ga:browser'},
-                        {'name': 'ga:country'},
-                        {'name': 'ga:city'},
-                        # ...
-                    ],
-                    # Additional request parameters...
+                    "dimensions": [dv.value for dv in row.dimension_values],
+                    "metrics": [mv.value for mv in row.metric_values]
                 }
+                for row in response.rows
             ]
         }
-        response = analytics.reports().batchGet(body=ua_request_body).execute()
-        return jsonify(response)
+
+        return jsonify(response_data)
+
+    # elif property_type == "UA":
+    #     # UA handling code remains unchanged
 
     else:
         return "Invalid property type", 400
+
+
 
 
 
