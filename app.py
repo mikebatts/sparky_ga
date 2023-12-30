@@ -97,6 +97,67 @@ def oauth2callback():
     return redirect(url_for('index'))
 
 
+
+# @app.route('/fetch-data', methods=['POST'])
+# def fetch_data():
+#     property_id = request.form['property_id']
+#     property_type = "GA4" if "UA-" not in property_id else "UA"
+
+#     credentials = google_credentials.Credentials(**session['credentials'])
+
+#     if property_type == "GA4":
+#         numeric_property_id = property_id.split('/')[-1]
+
+#         # Simplified dimensions and metrics for testing
+#         dimensions = [Dimension(name="pagePath")]
+#         metrics = [Metric(name="totalUsers")]
+
+#         client = BetaAnalyticsDataClient(credentials=credentials)
+#         ga4_request = RunReportRequest(
+#             property=f"properties/{numeric_property_id}",
+#             date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+#             dimensions=[
+#                 Dimension(name="pageTitle"),
+#                 Dimension(name="pageReferrer"),
+#                 Dimension(name="city"),
+#                 Dimension(name="country"),
+#                 Dimension(name="sessionDefaultChannelGrouping"),
+#                 Dimension(name="eventName"),  # If you're tracking specific events
+#                 Dimension(name="hostName"),
+#             ],
+#             metrics=[
+#                 Metric(name="totalUsers"),
+#                 Metric(name="screenPageViewsPerUser"),
+#                 Metric(name="bounceRate"),
+#                 Metric(name="engagementRate"),
+#                 Metric(name="sessions"),
+#                 Metric(name="averageSessionDuration"),
+#                 Metric(name="sessionsPerUser"),
+#                 Metric(name="eventValue"),
+#                 Metric(name="eventCount"),
+#                 Metric(name="eventsPerSession")
+#             ]
+#         )
+#         response = client.run_report(ga4_request)
+
+#         response_data = {
+#             "dimension_headers": [dh.name for dh in response.dimension_headers],
+#             "metric_headers": [mh.name for mh in response.metric_headers],
+#             "rows": [
+#                 {
+#                     "dimensions": [dv.value for dv in row.dimension_values],
+#                     "metrics": [mv.value for mv in row.metric_values]
+#                 }
+#                 for row in response.rows
+#             ]
+#         }
+
+#         return jsonify(response_data)
+
+#     else:
+#         return "Invalid property type", 400
+
+
 @app.route('/fetch-data', methods=['POST'])
 def fetch_data():
     property_id = request.form['property_id']
@@ -106,62 +167,130 @@ def fetch_data():
 
     if property_type == "GA4":
         numeric_property_id = property_id.split('/')[-1]
+        client = BetaAnalyticsDataClient(credentials=credentials)
 
-        # Update dimensions and metrics according to your new requirements
-        dimensions = [
-            Dimension(name="landingPage"),
-            Dimension(name="pagePath"),
+        # Define the dimensions and metrics for each batch
+        # Batch 1: Traffic and Performance
+        batch_1_dimensions = [
+            Dimension(name="sessionSourceMedium"),
+            Dimension(name="sessionCampaignId"),
             Dimension(name="deviceCategory"),
-            Dimension(name="deviceModel"),
-            Dimension(name="brandingInterest"),
-            Dimension(name="region"),
-            Dimension(name="cityId")
+            Dimension(name="eventName"),
         ]
-
-        metrics = [
+        batch_1_metrics = [
+            Metric(name="sessions"),
+            Metric(name="engagedSessions"),
+            Metric(name="averageSessionDuration"),
             Metric(name="newUsers"),
             Metric(name="totalUsers"),
-            Metric(name="checkouts"),
-            Metric(name="scrolledUsers"),
-            Metric(name="averageSessionDuration"),
-            Metric(name="bounceRate"),
-            Metric(name="engagementRate"),
-            Metric(name="sessions"),
-            Metric(name="conversions"),
-            Metric(name="screenPageViews")
+            Metric(name="purchaseRevenue"),
+            Metric(name="transactions"),
         ]
 
-        client = BetaAnalyticsDataClient(credentials=credentials)
-        ga4_request = RunReportRequest(
-            property=f"properties/{numeric_property_id}",
-            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
-            dimensions=dimensions,
-            metrics=metrics,
-            # Update or remove filters based on your requirements
-        )
-        response = client.run_report(ga4_request)
+        # Batch 2: Events Detail
+        batch_2_dimensions = [
+            Dimension(name="deviceCategory"),
+            Dimension(name="linkUrl"),
+            Dimension(name="pagePath"),
+            Dimension(name="eventName"),
+        ]
+        batch_2_metrics = [
+            Metric(name="addToCarts"),
+            Metric(name="checkouts"),
+            Metric(name="ecommercePurchases"),
+            Metric(name="itemListViews"),
+            Metric(name="itemListClicks"),
+            Metric(name="itemViews"),
+            Metric(name="purchaseRevenue"),
+            Metric(name="totalRevenue"),
+        ]
 
-        response_data = {
-            "dimension_headers": [dh.name for dh in response.dimension_headers],
-            "metric_headers": [mh.name for mh in response.metric_headers],
-            "rows": [
+        # Batch 3: Page Performance
+        batch_3_dimensions = [
+            Dimension(name="fullPageUrl"),
+            Dimension(name="eventName"),
+        ]
+        batch_3_metrics = [
+            Metric(name="screenPageViews"),
+            Metric(name="totalUsers"),
+            Metric(name="userEngagementDuration"),
+            Metric(name="engagedSessions"),
+        ]
+
+        # Batch 4: E-commerce
+        batch_4_dimensions = [
+            Dimension(name="transactionId"),
+            Dimension(name="sessionDefaultChannelGrouping")
+        ]
+        batch_4_metrics = [
+            Metric(name="purchaseRevenue"),
+            Metric(name="transactions"),
+            Metric(name="totalRevenue"),
+            Metric(name="checkouts"),
+            Metric(name="addToCarts"),
+            Metric(name="ecommercePurchases")
+        ]
+
+        # Function to process and combine responses
+        def process_response(response, combined_data):
+            combined_data["dimension_headers"].extend([dh.name for dh in response.dimension_headers])
+            combined_data["metric_headers"].extend([mh.name for mh in response.metric_headers])
+            combined_data["rows"].extend([
                 {
                     "dimensions": [dv.value for dv in row.dimension_values],
                     "metrics": [mv.value for mv in row.metric_values]
-                }
-                for row in response.rows
-            ]
+                } for row in response.rows
+            ])
+
+        # Combined response data
+        combined_response_data = {
+            "dimension_headers": [],
+            "metric_headers": [],
+            "rows": []
         }
 
-        return jsonify(response_data)
+        # Batch 1 request
+        ga4_request_1 = RunReportRequest(
+            property=f"properties/{numeric_property_id}",
+            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+            dimensions=batch_1_dimensions,
+            metrics=batch_1_metrics
+        )
+        response_1 = client.run_report(ga4_request_1)
+        process_response(response_1, combined_response_data)
 
-    # elif property_type == "UA":
-    #     # UA handling code remains unchanged
+        # Batch 2 request
+        ga4_request_2 = RunReportRequest(
+            property=f"properties/{numeric_property_id}",
+            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+            dimensions=batch_2_dimensions,
+            metrics=batch_2_metrics
+        )
+        response_2 = client.run_report(ga4_request_2)
+        process_response(response_2, combined_response_data)
+
+        # Batch 3 request
+        ga4_request_3 = RunReportRequest(
+            property=f"properties/{numeric_property_id}",
+            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+            dimensions=batch_3_dimensions,
+            metrics=batch_3_metrics
+        )
+
+        # Batch 4 request
+        ga4_request_4 = RunReportRequest(
+            property=f"properties/{numeric_property_id}",
+            date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+            dimensions=batch_4_dimensions,
+            metrics=batch_4_metrics
+        )
+        response_4 = client.run_report(ga4_request_4)
+        process_response(response_4, combined_response_data)
+
+        return jsonify(combined_response_data)
 
     else:
         return "Invalid property type", 400
-
-
 
 
 
