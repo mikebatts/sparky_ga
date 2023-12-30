@@ -97,67 +97,6 @@ def oauth2callback():
     return redirect(url_for('index'))
 
 
-
-# @app.route('/fetch-data', methods=['POST'])
-# def fetch_data():
-#     property_id = request.form['property_id']
-#     property_type = "GA4" if "UA-" not in property_id else "UA"
-
-#     credentials = google_credentials.Credentials(**session['credentials'])
-
-#     if property_type == "GA4":
-#         numeric_property_id = property_id.split('/')[-1]
-
-#         # Simplified dimensions and metrics for testing
-#         dimensions = [Dimension(name="pagePath")]
-#         metrics = [Metric(name="totalUsers")]
-
-#         client = BetaAnalyticsDataClient(credentials=credentials)
-#         ga4_request = RunReportRequest(
-#             property=f"properties/{numeric_property_id}",
-#             date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
-#             dimensions=[
-#                 Dimension(name="pageTitle"),
-#                 Dimension(name="pageReferrer"),
-#                 Dimension(name="city"),
-#                 Dimension(name="country"),
-#                 Dimension(name="sessionDefaultChannelGrouping"),
-#                 Dimension(name="eventName"),  # If you're tracking specific events
-#                 Dimension(name="hostName"),
-#             ],
-#             metrics=[
-#                 Metric(name="totalUsers"),
-#                 Metric(name="screenPageViewsPerUser"),
-#                 Metric(name="bounceRate"),
-#                 Metric(name="engagementRate"),
-#                 Metric(name="sessions"),
-#                 Metric(name="averageSessionDuration"),
-#                 Metric(name="sessionsPerUser"),
-#                 Metric(name="eventValue"),
-#                 Metric(name="eventCount"),
-#                 Metric(name="eventsPerSession")
-#             ]
-#         )
-#         response = client.run_report(ga4_request)
-
-#         response_data = {
-#             "dimension_headers": [dh.name for dh in response.dimension_headers],
-#             "metric_headers": [mh.name for mh in response.metric_headers],
-#             "rows": [
-#                 {
-#                     "dimensions": [dv.value for dv in row.dimension_values],
-#                     "metrics": [mv.value for mv in row.metric_values]
-#                 }
-#                 for row in response.rows
-#             ]
-#         }
-
-#         return jsonify(response_data)
-
-#     else:
-#         return "Invalid property type", 400
-
-
 @app.route('/fetch-data', methods=['POST'])
 def fetch_data():
     property_id = request.form['property_id']
