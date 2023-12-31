@@ -1,0 +1,3 @@
+[console_scripts]
+jsontool = jsontool:main
+
