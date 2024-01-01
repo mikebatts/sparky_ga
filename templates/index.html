@@ -5,22 +5,104 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Welcome to Our Analytics App</h1>
-    {% if 'credentials' in session %}
-        <p>You are currently signed in.</p>
-        <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
-        {% if 'properties' in session %}
-        <form action="{{ url_for('fetch_data') }}" method="post">
-            <label for="property">Select a property:</label>
-            <select name="property_id" id="property" onchange="setPropertyType()">
-                {% for property in session['properties'] %}
-                    <option value="{{ property['property_id'] }}">{{ property['property_name'] }} ({{ property['property_type'] }} - {{ property['property_id'] }})</option>
-                {% endfor %}
-            </select>
-            <!-- Hidden field to store property type -->
-            <input type="hidden" name="property_type" id="property_type" value="">
-            <input type="submit" value="Fetch Data">
-        </form>
+    <div class=""container">
+
+        <h1>Welcome to Sparky</h1>
+        {% if 'credentials' in session %}
+            <p>You are currently signed in.</p>
+            <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
+            {% if 'properties' in session %}
+            <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
+                <label for="property">Select a property:</label>
+                <select name="property_id" id="property" onchange="setPropertyType()">
+                    {% for property in session['properties'] %}
+                        <option value="{{ property['property_id'] }}">{{ property['property_name'] }} ({{ property['property_type'] }} - {{ property['property_id'] }})</option>
+                    {% endfor %}
+                </select>
+                <!-- Hidden field to store property type -->
+                <input type="hidden" name="property_type" id="property_type" value="">
+                <input type="submit" value="Fetch Data">
+            </form>
+
+            <div id="insights">
+                <div class="insights-container">
+                    <h2>Insights</h2>
+                    <p id="gpt4_insights_content">Summary will appear here.</p>
+                    <div id="loader" style="display:none;">Fetching data<span id="dots"></span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- You might need additional JavaScript to update this section with the actual insights -->
+        <script>
+            // Example JavaScript to fetch and display insights
+            // Note: Adjust the script as per your actual implementation
+            function fetchAndDisplayInsights(event) {
+                event.preventDefault();
+
+                var propertyId = document.getElementById('property').value;
+                var formData = new FormData();
+                formData.append('property_id', propertyId);
+
+                // Show loader
+                document.getElementById('loader').style.display = 'block';
+                animateDots();
+
+                // AJAX request to the server
+                fetch('/fetch-data', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none'; // Hide loader
+                    document.getElementById('gpt4_insights_content').innerHTML = formatInsights(data.gpt4_insight);
+                })
+                .catch(error => {
+                    console.error('Error fetching insights:', error);
+                    document.getElementById('loader').style.display = 'none';
+                });
+            }
+
+            function animateDots() {
+                var dots = document.getElementById("dots");
+                var count = 0;
+                setInterval(() => {
+                    dots.innerHTML = ".".repeat(count % 4);
+                    count++;
+                }, 500);
+            }
+
+            function formatInsights(insights) {
+                // Replace ### headings with <h3> tags
+                insights = insights.replace(/###\s(.*?)\n/g, '<h3>$1</h3>');
+
+                // Replace double asterisks with bold tags
+                insights = insights.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+                // Replace bullet points and numbered lists with HTML list elements
+                insights = insights.replace(/(?:^|\n)(-|\d+\.)\s(.*?)(?=\n|$)/gm, (match, p1, p2) => {
+                    if (p1 === '-') {
+                        return `<li>${p2}</li>`;
+                    } else {
+                        return `<li>${p2}</li>`;
+                    }
+                });
+
+                // Wrap bulleted lists in <ul>
+                insights = insights.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>');
+
+                // Wrap numbered lists in <ol>
+                insights = insights.replace(/(<li>\d+\..*?<\/li>)/gs, '<ol>$1</ol>');
+
+                // Split the insights into paragraphs and wrap each with <p> tags
+                return insights.split('\n\n').map(paragraph => `<p>${paragraph}</p>`).join('');
+            }
+
+
+
+
+        </script>
         
         <script>
             function setPropertyType() {

@@ -2,12 +2,12 @@
 
 
 import json
+import chromadb
 from dotenv import load_dotenv
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric, FilterExpression, Filter, NumericValue
 from googleapiclient.discovery import build
 import os
-import openai
 from flask import Flask, jsonify, render_template, redirect, url_for, session, request
 import google_auth_oauthlib.flow
 from google.oauth2 import credentials as google_credentials
@@ -15,6 +15,14 @@ from google.oauth2 import credentials as google_credentials
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 
+from langchain_handler import initialize_langchain_agent, process_json_data
+
+from langchain.prompts.chat import (
+    ChatPromptTemplate,
+    HumanMessagePromptTemplate,
+    SystemMessagePromptTemplate,
+)
+from langchain.schema import HumanMessage, SystemMessage
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,9 +32,12 @@ app.secret_key = os.getenv('FLASK_APP_SECRET_KEY')
 
 # Replace with the actual path to your client_secret.json
 CLIENT_SECRETS_FILE = os.environ.get("GOOGLE_CLIENT_SECRETS")
-openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
+# Initialize Chroma Client globally
+chroma_client = chromadb.Client()
 
+# Create a Collection in Chroma
+collection = chroma_client.create_collection(name="my_collection")
 
 @app.route('/')
 def index():
@@ -240,26 +251,46 @@ def fetch_data():
         response_4 = client.run_report(ga4_request_4)
         process_response(response_4, combined_response_data)
 
-        # Convert the Google Analytics data to a string format
-        ga_data_string = json.dumps(combined_response_data)
+        # Store processed data in Chroma
+        chroma_documents = [json.dumps(row) for row in combined_response_data["rows"]]
+        collection.add(documents=chroma_documents, ids=[str(i) for i in range(len(chroma_documents))])
 
-        # Updated OpenAI API call
-        response = openai_client.chat.completions.create(
-            model="gpt-4-1106-preview",
-            messages=[
-                {"role": "system", "content": "You are a professional analytics software product named Sparky, designed to analyze Google Analytics data. You provide data summaries in an easy to understand manner, do not acknowledge that you are openAI or a GPT."},
-                {"role": "user", "content": f"Analyze this data, and provide a comphrensive, insightful summary. This summary should be helpful and in laymans terms for the user -- helping to make their business or website better. Your output is strictly a concise summary, 4  short key insights based on numeric statistics or data points you uncover, and 4 concise but meaningful actionable strategies the user can take. Use emojis instead of bullet points for each actionable strategy, and only those points.: {ga_data_string}"}
-            ],
-            max_tokens=500  # Set a character limit
-        )
+        # Check the contents of the collection
+        peek_result = collection.peek()
+        print("Peek result:", peek_result)
 
+        # Perform the query
+        query_result = collection.query(query_embeddings=[[0]*384], n_results=1000)
+        print("Query result:", query_result)
 
-        # Extract the response
-        insights = response.choices[0].message.content
+        # Check if 'results' key exists in the query result
+        if 'results' in query_result:
+            retrieved_data = [item['document'] for item in query_result['results']]
+        else:
+            print("No 'results' key found in query result")
+            retrieved_data = []
+
+        # Initialize LangChain agent
+        json_agent = initialize_langchain_agent(json.dumps(retrieved_data))
+
+        # Generate insights using LangChain agent
+        # Define a human message for the agent's query
+        human_message = "Analyze the JSON data to identify the top three sources of user engagement based on session data."
+
+        # Create the human message prompt
+        human_message_prompt = HumanMessagePromptTemplate.from_template("{text}")
+        chat_prompt = ChatPromptTemplate.from_messages([human_message_prompt])
+
+        combined_insights = []
+        for chunk in retrieved_data:
+            # Format and run the chat model on each chunk
+            answer = json_agent.run(chat_prompt.format_prompt(text=human_message).to_messages(chunk))
+            combined_insights.append(answer)
 
         # Return insights
         return jsonify({
-            'gpt4_insight': insights
+            'data': combined_response_data,
+            'langchain_insight': combined_insights
         })
 
     else:
