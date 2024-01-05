@@ -5,8 +5,7 @@
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class=""container">
-
+    <div class="container">
         <h1>Welcome to Sparky</h1>
         {% if 'credentials' in session %}
             <p>You are currently signed in.</p>
@@ -31,95 +30,65 @@
                     <div id="loader" style="display:none;">Fetching data<span id="dots"></span></div>
                 </div>
             </div>
-        </div>
-
-        <!-- You might need additional JavaScript to update this section with the actual insights -->
-        <script>
-            // Example JavaScript to fetch and display insights
-            // Note: Adjust the script as per your actual implementation
-            function fetchAndDisplayInsights(event) {
-                event.preventDefault();
-
-                var propertyId = document.getElementById('property').value;
-                var formData = new FormData();
-                formData.append('property_id', propertyId);
-
-                // Show loader
-                document.getElementById('loader').style.display = 'block';
-                animateDots();
-
-                // AJAX request to the server
-                fetch('/fetch-data', {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('loader').style.display = 'none'; // Hide loader
-                    document.getElementById('gpt4_insights_content').innerHTML = formatInsights(data.gpt4_insight);
-                })
-                .catch(error => {
-                    console.error('Error fetching insights:', error);
-                    document.getElementById('loader').style.display = 'none';
-                });
-            }
-
-            function animateDots() {
-                var dots = document.getElementById("dots");
-                var count = 0;
-                setInterval(() => {
-                    dots.innerHTML = ".".repeat(count % 4);
-                    count++;
-                }, 500);
-            }
-
-            function formatInsights(insights) {
-                // Replace ### headings with <h3> tags
-                insights = insights.replace(/###\s(.*?)\n/g, '<h3>$1</h3>');
-
-                // Replace double asterisks with bold tags
-                insights = insights.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
-
-                // Replace bullet points and numbered lists with HTML list elements
-                insights = insights.replace(/(?:^|\n)(-|\d+\.)\s(.*?)(?=\n|$)/gm, (match, p1, p2) => {
-                    if (p1 === '-') {
-                        return `<li>${p2}</li>`;
-                    } else {
-                        return `<li>${p2}</li>`;
-                    }
-                });
-
-                // Wrap bulleted lists in <ul>
-                insights = insights.replace(/(<li>.*?<\/li>)/gs, '<ul>$1</ul>');
-
-                // Wrap numbered lists in <ol>
-                insights = insights.replace(/(<li>\d+\..*?<\/li>)/gs, '<ol>$1</ol>');
-
-                // Split the insights into paragraphs and wrap each with <p> tags
-                return insights.split('\n\n').map(paragraph => `<p>${paragraph}</p>`).join('');
-            }
-
-
-
-
-        </script>
-        
-        <script>
-            function setPropertyType() {
-                var property = document.getElementById('property');
-                var selectedProperty = property.options[property.selectedIndex].text;
-                // Determine property type based on some identifier in the property name
-                var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
-                document.getElementById('property_type').value = propertyType;
-            }
-            // Initialize property type when the page loads
-            window.onload = setPropertyType;
-        </script>
-        
+            {% endif %}
+        {% else %}
+            <p>Click the button below to sign in with Google and select your Analytics account.</p>
+            <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
         {% endif %}
-    {% else %}
-        <p>Click the button below to sign in with Google and select your Analytics account.</p>
-        <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
-    {% endif %}
+    </div>
+
+    <script>
+        function fetchAndDisplayInsights(event) {
+            event.preventDefault();
+
+            var propertyId = document.getElementById('property').value;
+            var formData = new FormData();
+            formData.append('property_id', propertyId);
+
+            document.getElementById('loader').style.display = 'block';
+            animateDots();
+
+            fetch('/fetch-data', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('gpt4_insights_content').innerHTML = formatInsights(data);
+            })
+            .catch(error => {
+                console.error('Error fetching insights:', error);
+                document.getElementById('loader').style.display = 'none';
+            });
+        }
+
+        function animateDots() {
+            var dots = document.getElementById("dots");
+            var count = 0;
+            setInterval(() => {
+                dots.innerHTML = ".".repeat(count % 4);
+                count++;
+            }, 500);
+        }
+
+        function formatInsights(data) {
+            // New formatting logic here
+            // Example: 
+            var formattedSummary = '<h3>Summary:</h3><p>' + data.summary + '</p>';
+            var formattedInsights = '<h3>Key Insights:</h3><p>' + data.key_insights + '</p>';
+            var formattedStrategies = '<h3>Actionable Strategies:</h3><p>' + data.actionable_strategies + '</p>';
+            return formattedSummary + formattedInsights + formattedStrategies;
+            // Note: Adjust the implementation as per your actual API response format
+        }
+
+        function setPropertyType() {
+            var property = document.getElementById('property');
+            var selectedProperty = property.options[property.selectedIndex].text;
+            var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
+            document.getElementById('property_type').value = propertyType;
+        }
+        window.onload = setPropertyType;
+    </script>
 </body>
 </html>
