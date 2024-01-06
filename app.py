@@ -7,18 +7,7 @@ from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric, FilterExpression, Filter, NumericValue
 from googleapiclient.discovery import build
 import os
-
-from langchain.output_parsers.pydantic import PydanticOutputParser
-from langchain.prompts import PromptTemplate
-from langchain.llms import OpenAI
-from langchain.chains import LLMChain
-from langchain.callbacks import StdOutCallbackHandler
-
-
-from langchain.globals import set_debug, set_verbose
-from langchain_community.chat_models import ChatOpenAI
-
-
+import openai
 from flask import Flask, jsonify, render_template, redirect, url_for, session, request
 import google_auth_oauthlib.flow
 from google.oauth2 import credentials as google_credentials
@@ -27,80 +16,42 @@ from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 
 
-from pydantic import BaseModel
-
-class SummaryModel(BaseModel):
-    summary: str
-
-class InsightsModel(BaseModel):
-    insights: list[str]
-
-class StrategiesModel(BaseModel):
-    strategies: list[str]
-
-
-# LangChainService Class
-class LangChainService:
-    def __init__(self, api_key):
-
-        if not isinstance(api_key, str):
-            raise ValueError("API key must be a string")
-        
-
-        self.llm = ChatOpenAI(api_key=api_key, model_name="gpt-4-1106-preview", temperature=0.7, max_tokens=250)
-        self.summary_template = "Provide a comprehensive, insightful summary on the performance from this Google Analytics data."
-        self.insights_template = "Identify 4 key insights using percentage or numerical metrics from this Google Analytics data."
-        self.strategies_template = "Suggest 4 actionable strategies for user improvement based on this Google Analytics data."
-        self.summary_chain = self.create_chain_for_template(self.summary_template, SummaryModel)
-        self.insights_chain = self.create_chain_for_template(self.insights_template, InsightsModel)
-        self.strategies_chain = self.create_chain_for_template(self.strategies_template, StrategiesModel)
-
-
-
-    def create_chain_for_template(self, template, output_model):
-        prompt_template = PromptTemplate(input_variables=["ga_data"], template=template)
-        output_parser = PydanticOutputParser(pydantic_object=output_model)  # Adjusted line
-        return LLMChain(llm=self.llm, prompt=prompt_template, output_parser=output_parser)
-
-
-    def generate_insights(self, ga_data):
-        summary = self.summary_chain.predict({"ga_data": ga_data}).summary
-        insights = self.insights_chain.predict({"ga_data": ga_data}).insights
-        strategies = self.strategies_chain.predict({"ga_data": ga_data}).strategies
-        return summary, insights, strategies
-
-
-
-
-##App#########
-
-app = Flask(__name__)
 # Load environment variables from .env file
 load_dotenv()
+
+app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_APP_SECRET_KEY')
 
 # Replace with the actual path to your client_secret.json
 CLIENT_SECRETS_FILE = os.environ.get("GOOGLE_CLIENT_SECRETS")
-
-# Initialize LangChainService with API key
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("OPENAI_API_KEY not found in environment variables")
-
-lang_chain_service = LangChainService(api_key)
-
-# Define a function to split text into chunks
-def split_text(text, max_length=2000):
-    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
+openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-def llm_chain_predict(template, data_chunk):
-    prompt_template = PromptTemplate(input_variables=["ga_data_chunk"], template=template)
-    llm_chain = LLMChain(llm=lang_chain_service.llm, prompt=prompt_template)
-    return llm_chain.predict(ga_data_chunk=data_chunk).strip()
+def summarize_ga_data(combined_data):
+        summary = {}
 
+        # Example: Extracting total sessions and average session duration
+        total_sessions = sum(int(row["sessions"]) for row in combined_data["rows"] if "sessions" in row)
+        total_users = sum(int(row["totalUsers"]) for row in combined_data["rows"] if "totalUsers" in row)
+        avg_session_duration = sum(float(row["averageSessionDuration"]) for row in combined_data["rows"] if "averageSessionDuration" in row) / len(combined_data["rows"])
 
-##Routes###############
+        # Example: Identifying top traffic sources
+        traffic_sources = {}
+        for row in combined_data["rows"]:
+            if "sessionSourceMedium" in row and "sessions" in row:
+                source = row["sessionSourceMedium"]
+                sessions = int(row["sessions"])
+                traffic_sources[source] = traffic_sources.get(source, 0) + sessions
+        top_traffic_sources = sorted(traffic_sources.items(), key=lambda x: x[1], reverse=True)[:3]
+
+        # Building a summary string
+        summary_str = (f"Total Sessions: {total_sessions}, "
+                    f"Total Users: {total_users}, "
+                    f"Average Session Duration: {avg_session_duration:.2f} seconds. "
+                    f"Top Traffic Sources: {', '.join([source for source, _ in top_traffic_sources])}.")
+        
+        return summary_str
+
 
 @app.route('/')
 def index():
@@ -182,10 +133,9 @@ def oauth2callback():
 
 # 3. & 4. Add Data to Chroma Collection (After processing your Google Analytics data)
 def fetch_data():
-    set_debug(True)
-    set_verbose(True)
     property_id = request.form['property_id']
     property_type = "GA4" if "UA-" not in property_id else "UA"
+
     credentials = google_credentials.Credentials(**session['credentials'])
 
     if property_type == "GA4":
@@ -318,18 +268,43 @@ def fetch_data():
         # Convert the Google Analytics data to a string format
         ga_data_string = json.dumps(combined_response_data)
 
-        # Use LangChainService for generating insights
-        summary, insights, strategies = lang_chain_service.generate_insights(ga_data_string)
+         # New step: Summarize the Google Analytics data
+        summarized_data = summarize_ga_data(combined_response_data)  # Implement this function
 
-        return jsonify({
-            'summary': summary,
-            'key_insights': insights,
-            'actionable_strategies': strategies
-        })
-    else:
-        return "Invalid property type", 400
+        # Prepare a single prompt for all tasks in the specified format
+        prompt = (f"Analyze this summarized data: {summarized_data}\n\n"
+          "### Summary:\n"
+          "Provide a concise 3-4 sentence summary, avoid using a list format.\n"
+          "### Key Insights:\n"
+          "List 4 key insights using metrics in a numbered format, 1-2 sentences each.\n"
+          "### Actionable Strategies:\n"
+          "Suggest 4 actionable strategies based on the data in a numbered format, 1-2 sentences each.\n"
+          "Use numbers (1, 2, 3, 4) to format each point in the lists.")
 
 
+        ## OpenAI API call with the new prompt
+        response = openai_client.chat.completions.create(
+            model="gpt-4-1106-preview",
+            messages=[
+                {"role": "system", "content": "You are a professional analytics assistant."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=300  # Adjust as needed
+        )
+
+        # Print the AI response in the terminal for debugging
+        print("OpenAI Response:", response.choices[0].message.content)
+        
+        
+        # Directly use the plain text response
+        insights_text = response.choices[0].message.content
+
+        # Return insights as plain text
+        return jsonify({'gpt4_insight': {'text': insights_text}})
+
+
+
+ 
 
 
 @app.route('/logout')

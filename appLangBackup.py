@@ -7,7 +7,18 @@ from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric, FilterExpression, Filter, NumericValue
 from googleapiclient.discovery import build
 import os
-import openai
+
+from langchain.output_parsers.pydantic import PydanticOutputParser
+from langchain.prompts import PromptTemplate
+from langchain.llms import OpenAI
+from langchain.chains import LLMChain
+from langchain.callbacks import StdOutCallbackHandler
+
+
+from langchain.globals import set_debug, set_verbose
+from langchain_community.chat_models import ChatOpenAI
+
+
 from flask import Flask, jsonify, render_template, redirect, url_for, session, request
 import google_auth_oauthlib.flow
 from google.oauth2 import credentials as google_credentials
@@ -16,17 +27,80 @@ from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 
 
-# Load environment variables from .env file
-load_dotenv()
+from pydantic import BaseModel
+
+class SummaryModel(BaseModel):
+    summary: str
+
+class InsightsModel(BaseModel):
+    insights: list[str]
+
+class StrategiesModel(BaseModel):
+    strategies: list[str]
+
+
+# LangChainService Class
+class LangChainService:
+    def __init__(self, api_key):
+
+        if not isinstance(api_key, str):
+            raise ValueError("API key must be a string")
+        
+
+        self.llm = ChatOpenAI(api_key=api_key, model_name="gpt-4-1106-preview", temperature=0.7, max_tokens=250)
+        self.summary_template = "Provide a comprehensive, insightful summary on the performance from this Google Analytics data."
+        self.insights_template = "Identify 4 key insights using percentage or numerical metrics from this Google Analytics data."
+        self.strategies_template = "Suggest 4 actionable strategies for user improvement based on this Google Analytics data."
+        self.summary_chain = self.create_chain_for_template(self.summary_template, SummaryModel)
+        self.insights_chain = self.create_chain_for_template(self.insights_template, InsightsModel)
+        self.strategies_chain = self.create_chain_for_template(self.strategies_template, StrategiesModel)
+
+
+
+    def create_chain_for_template(self, template, output_model):
+        prompt_template = PromptTemplate(input_variables=["ga_data"], template=template)
+        output_parser = PydanticOutputParser(pydantic_object=output_model)  # Adjusted line
+        return LLMChain(llm=self.llm, prompt=prompt_template, output_parser=output_parser)
+
+
+    def generate_insights(self, ga_data):
+        summary = self.summary_chain.predict({"ga_data": ga_data}).summary
+        insights = self.insights_chain.predict({"ga_data": ga_data}).insights
+        strategies = self.strategies_chain.predict({"ga_data": ga_data}).strategies
+        return summary, insights, strategies
+
+
+
+
+##App#########
 
 app = Flask(__name__)
+# Load environment variables from .env file
+load_dotenv()
 app.secret_key = os.getenv('FLASK_APP_SECRET_KEY')
 
 # Replace with the actual path to your client_secret.json
 CLIENT_SECRETS_FILE = os.environ.get("GOOGLE_CLIENT_SECRETS")
-openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+# Initialize LangChainService with API key
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    raise ValueError("OPENAI_API_KEY not found in environment variables")
+
+lang_chain_service = LangChainService(api_key)
+
+# Define a function to split text into chunks
+def split_text(text, max_length=2000):
+    return [text[i:i + max_length] for i in range(0, len(text), max_length)]
 
 
+def llm_chain_predict(template, data_chunk):
+    prompt_template = PromptTemplate(input_variables=["ga_data_chunk"], template=template)
+    llm_chain = LLMChain(llm=lang_chain_service.llm, prompt=prompt_template)
+    return llm_chain.predict(ga_data_chunk=data_chunk).strip()
+
+
+##Routes###############
 
 @app.route('/')
 def index():
@@ -108,9 +182,10 @@ def oauth2callback():
 
 # 3. & 4. Add Data to Chroma Collection (After processing your Google Analytics data)
 def fetch_data():
+    set_debug(True)
+    set_verbose(True)
     property_id = request.form['property_id']
     property_type = "GA4" if "UA-" not in property_id else "UA"
-
     credentials = google_credentials.Credentials(**session['credentials'])
 
     if property_type == "GA4":
@@ -243,25 +318,14 @@ def fetch_data():
         # Convert the Google Analytics data to a string format
         ga_data_string = json.dumps(combined_response_data)
 
-        # Updated OpenAI API call
-        response = openai_client.chat.completions.create(
-            model="gpt-4-1106-preview",
-            messages=[
-                {"role": "system", "content": "You are a professional analytics software product named Sparky, designed to analyze Google Analytics data. You provide data summaries in an easy to understand manner, do not acknowledge that you are openAI or a GPT."},
-                {"role": "user", "content": f"Analyze this data, and provide a comphrensive, insightful summary in 3-4 setnences. This summary should be helpful and in laymans terms for the user -- helping to make their business or website better. Your output is strictly a concise summary, 4  short key insights based on percentage metric or data points you uncover, and 4 concise but meaningful actionable strategies the user can take. Use emojis instead of bullet points for each actionable strategy, and only those points.: {ga_data_string}"}
-            ],
-            max_tokens=400  # Set a character limit
-        )
+        # Use LangChainService for generating insights
+        summary, insights, strategies = lang_chain_service.generate_insights(ga_data_string)
 
-
-        # Extract the response
-        insights = response.choices[0].message.content
-
-        # Return insights
         return jsonify({
-            'gpt4_insight': insights
+            'summary': summary,
+            'key_insights': insights,
+            'actionable_strategies': strategies
         })
-
     else:
         return "Invalid property type", 400
 

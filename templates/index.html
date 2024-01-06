@@ -26,7 +26,18 @@
             <div id="insights">
                 <div class="insights-container">
                     <h2>Insights</h2>
-                    <p id="gpt4_insights_content">Summary will appear here.</p>
+                    <div class="summary">
+                        <h3>Summary</h3>
+                        <p id="summary-content">Summary will appear here.</p>
+                    </div>
+                    <div class="key-insights">
+                        <h3>Key Insights</h3>
+                        <p id="key-insights-content">Key Insights will appear here.</p>
+                    </div>
+                    <div class="actionable-strategies">
+                        <h3>Actionable Strategies</h3>
+                        <p id="actionable-strategies-content">Actionable Strategies will appear here.</p>
+                    </div>
                     <div id="loader" style="display:none;">Fetching data<span id="dots"></span></div>
                 </div>
             </div>
@@ -54,6 +65,7 @@
             })
             .then(response => response.json())
             .then(data => {
+                console.log(data); // Log the entire data object for debugging
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('gpt4_insights_content').innerHTML = formatInsights(data);
             })
@@ -61,6 +73,7 @@
                 console.error('Error fetching insights:', error);
                 document.getElementById('loader').style.display = 'none';
             });
+
         }
 
         function animateDots() {
@@ -73,14 +86,35 @@
         }
 
         function formatInsights(data) {
-            // New formatting logic here
-            // Example: 
-            var formattedSummary = '<h3>Summary:</h3><p>' + data.summary + '</p>';
-            var formattedInsights = '<h3>Key Insights:</h3><p>' + data.key_insights + '</p>';
-            var formattedStrategies = '<h3>Actionable Strategies:</h3><p>' + data.actionable_strategies + '</p>';
-            return formattedSummary + formattedInsights + formattedStrategies;
-            // Note: Adjust the implementation as per your actual API response format
+            var text = data.gpt4_insight.text;
+
+            // Function to format lists with HTML line breaks
+            function formatList(text) {
+                return text.replace(/(\n\d\.)/g, '<br>$1');
+            }
+
+            // Extracting and formatting each section
+            var summaryMatch = text.match(/### Summary:[\s\S]*?\n([\s\S]*?)\n(?=###)/);
+            var keyInsightsMatch = text.match(/### Key Insights:[\s\S]*?\n([\s\S]*?)\n(?=###)/);
+            var actionableStrategiesMatch = text.match(/### Actionable Strategies:[\s\S]*?\n([\s\S]*)/);
+
+            var summary = summaryMatch ? summaryMatch[1].trim() : 'No summary available.';
+            var keyInsights = keyInsightsMatch ? formatList(keyInsightsMatch[1].trim()) : 'No key insights available.';
+            var actionableStrategies = actionableStrategiesMatch ? formatList(actionableStrategiesMatch[1].trim()) : 'No actionable strategies available.';
+
+            document.getElementById('summary-content').innerHTML = summary;
+            document.getElementById('key-insights-content').innerHTML = keyInsights;
+            document.getElementById('actionable-strategies-content').innerHTML = actionableStrategies;
         }
+
+
+
+
+
+
+
+
+
 
         function setPropertyType() {
             var property = document.getElementById('property');
