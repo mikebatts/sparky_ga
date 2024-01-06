@@ -67,14 +67,75 @@
             .then(data => {
                 console.log(data); // Log the entire data object for debugging
                 document.getElementById('loader').style.display = 'none';
-                document.getElementById('gpt4_insights_content').innerHTML = formatInsights(data);
+                displayFormattedInsights(data.gpt4_insight.text);
             })
             .catch(error => {
                 console.error('Error fetching insights:', error);
                 document.getElementById('loader').style.display = 'none';
             });
-
         }
+
+        function displayFormattedInsights(text) {
+            var summary = extractSection(text, "Summary");
+            var keyInsights = extractSection(text, "Key Insights");
+            var actionableStrategies = extractSection(text, "Actionable Strategies");
+            console.log('Actionable Strategies:', actionableStrategies);  // Debugging line
+
+
+            document.getElementById('summary-content').innerHTML = formatParagraph(summary);
+            document.getElementById('key-insights-content').innerHTML = formatInsights(keyInsights);
+            document.getElementById('actionable-strategies-content').innerHTML = formatStrategies(actionableStrategies);
+        }
+
+        function formatInsights(text) {
+            var insights = text.split('\n').filter(item => item.trim().startsWith('-') || item.trim().startsWith('*'));
+            return insights.map(insight => {
+                var formattedInsight = insight.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').split(' - '); // Remove double asterisks
+                return `<div class='insight'><span class='insight-title'>${formattedInsight[0].trim()}</span>: <span class='insight-data'>${formattedInsight[1]}</span> - <span class='insight-comment'>${formattedInsight.slice(2).join(' - ').trim()}</span></div>`;
+            }).join('<br>');
+        }
+
+        function formatStrategies(text) {
+            var lines = text.split('\n');
+            var formattedStrategies = [];
+            lines.forEach(line => {
+                var match = line.match(/-\s*([\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*)(.*)/u);
+                if (match) {
+                    var emoji = match[1];
+                    var strategyText = match[2].trim().replace(/\*\*/g, ''); // Remove double asterisks
+                    formattedStrategies.push(
+                        `<li class="strategy"><span class="strategy-emoji">${emoji}</span> <span class="strategy-text">${strategyText}</span></li>`
+                    );
+                }
+            });
+            return '<ul>' + formattedStrategies.join('') + '</ul>';
+        }
+
+
+
+
+
+
+
+
+        function formatParagraph(text) {
+            return text.replace(/\n/g, '<br><br>');
+        }
+
+        function extractSection(text, sectionTitle) {
+            var regex;
+            if (sectionTitle === "Actionable Strategies") {
+                // Special handling for "Actionable Strategies" to account for variations in formatting
+                regex = new RegExp(`### ${sectionTitle}:.*\\n([\\s\\S]*?)(?=###|$)`);
+            } else {
+                // Regular expression for other sections
+                regex = new RegExp(`### ${sectionTitle}:[\\s\\S]*?\\n([\\s\\S]*?)\\n(?=###|$)`);
+            }
+            var match = text.match(regex);
+            return match ? match[1].trim() : 'No data available.';
+        }
+
+
 
         function animateDots() {
             var dots = document.getElementById("dots");
@@ -85,31 +146,29 @@
             }, 500);
         }
 
-        function formatInsights(data) {
-            var text = data.gpt4_insight.text;
+        // function formatInsights(data) {
+        //     var text = data.gpt4_insight.text;
 
-            // Function to format lists with HTML line breaks
-            function formatList(text) {
-                return text.replace(/(\n\d\.)/g, '<br>$1');
-            }
+        //     // Function to format Key Insights with bullet points
+        //     function formatKeyInsights(text) {
+        //         var insights = text.split('\n- '); // Splitting each insight starting with '\n- '
+        //         insights.shift(); // Remove the first empty element
+        //         return insights.map(insight => `<li>${insight.trim()}</li>`).join('');
+        //     }
 
-            // Extracting and formatting each section
-            var summaryMatch = text.match(/### Summary:[\s\S]*?\n([\s\S]*?)\n(?=###)/);
-            var keyInsightsMatch = text.match(/### Key Insights:[\s\S]*?\n([\s\S]*?)\n(?=###)/);
-            var actionableStrategiesMatch = text.match(/### Actionable Strategies:[\s\S]*?\n([\s\S]*)/);
+        //     // Extracting and formatting each section
+        //     var summaryMatch = text.match(/### Summary:[\s\S]*?\n([\s\S]*?)\n(?=###)/);
+        //     var keyInsightsMatch = text.match(/### Key Insights:[\s\S]*?\n([\s\S]*?)\n(?=###)/);
+        //     var actionableStrategiesMatch = text.match(/### Actionable Strategies:[\s\S]*?\n([\s\S]*)/);
 
-            var summary = summaryMatch ? summaryMatch[1].trim() : 'No summary available.';
-            var keyInsights = keyInsightsMatch ? formatList(keyInsightsMatch[1].trim()) : 'No key insights available.';
-            var actionableStrategies = actionableStrategiesMatch ? formatList(actionableStrategiesMatch[1].trim()) : 'No actionable strategies available.';
+        //     var summary = summaryMatch ? summaryMatch[1].trim() : 'No summary available.';
+        //     var keyInsights = keyInsightsMatch ? formatKeyInsights(keyInsightsMatch[1].trim()) : 'No key insights available.';
+        //     var actionableStrategies = actionableStrategiesMatch ? formatList(actionableStrategiesMatch[1].trim()) : 'No actionable strategies available.';
 
-            document.getElementById('summary-content').innerHTML = summary;
-            document.getElementById('key-insights-content').innerHTML = keyInsights;
-            document.getElementById('actionable-strategies-content').innerHTML = actionableStrategies;
-        }
-
-
-
-
+        //     document.getElementById('summary-content').innerHTML = summary;
+        //     document.getElementById('key-insights-content').innerHTML = `<ul>${keyInsights}</ul>`;
+        //     document.getElementById('actionable-strategies-content').innerHTML = actionableStrategies;
+        // }
 
 
 

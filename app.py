@@ -274,17 +274,17 @@ def fetch_data():
         # Prepare a single prompt for all tasks in the specified format
         prompt = (f"Analyze this summarized data: {summarized_data}\n\n"
           "### Summary:\n"
-          "Provide a concise 3-4 sentence summary, avoid using a list format.\n"
+          "Provide a concise 3-4 sentence summary. Avoid using a list format.\n"
           "### Key Insights:\n"
-          "List 4 key insights using metrics in a numbered format, 1-2 sentences each.\n"
+          "Generate 4 key insights. Each insight should include: a one-word title, a numeric data point or one word metric, a percentage change (if applicable), and one brief explanatory comment no more than 100 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k (up 18%) - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
           "### Actionable Strategies:\n"
-          "Suggest 4 actionable strategies based on the data in a numbered format, 1-2 sentences each.\n"
-          "Use numbers (1, 2, 3, 4) to format each point in the lists.")
+          "Suggest 4 actionable strategies based on the data, 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
 
 
         ## OpenAI API call with the new prompt
         response = openai_client.chat.completions.create(
             model="gpt-4-1106-preview",
+            temperature=1,
             messages=[
                 {"role": "system", "content": "You are a professional analytics assistant."},
                 {"role": "user", "content": prompt}
