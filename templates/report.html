@@ -4,8 +4,10 @@
     <title>Report - Sparky</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="/path/to/node_modules/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
+    {% include 'navbar.html' %}
     <div class="container">
         <h1>Insights</h1>
         <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
@@ -28,4 +30,9 @@
         </div>
     </div>
 </body>
+
+<script>
+    feather.replace();
+</script>
+
 </html>

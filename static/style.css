@@ -1,4 +1,74 @@
 /* General styles */
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #fff;
+    padding: 8px 16px;
+}
+
+.navbar-logo img {
+    height: 32px; /* Adjust as needed */
+}
+
+.navbar-menu {
+    position: relative;
+    color:#000;
+}
+
+.dropdown-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #ddd;
+}
+
+.dropdown-button {
+    background-color: #EBEBEB;
+    color: #787878;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 8px;
+    padding-bottom: 4px;
+}
+
+.dropdown-button svg {
+    stroke-width: 2.6;
+}
+
+.dropdown-button i {
+    color: #000; /* Replace #yourIconColor with the color for the icon */
+}
+
+
+.dropdown-button:hover .dropdown-content {
+    display: block;
+}
+
+
 body {
     background-color: #fff;
     color: #333;
@@ -6,23 +76,37 @@ body {
     line-height: 1.6;
     margin: 0;
     text-align: center;
-    height: 100vh; /* Full viewport height */
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    min-height: 100vh; /* To ensure it covers at least the entire viewport */
+    display: block;
 }
 
 .container {
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* Space out login-body and CTA-container */
-    height: 100%; /* Take full height of the parent */
+    justify-content: space-between;
+    height: calc(100vh - 60px); /* Adjust height to account for navbar height */
     width: 100%;
     padding: 16px;
-    box-sizing: border-box; /* Include padding in width calculations */
+    box-sizing: border-box;
+    overflow-y: auto; /* Add scroll for overflow content */
 }
 
+
 .login-body {
+    flex-grow: 1; /* Allow this div to grow and take available space */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* Center content */
+}
+
+.prop-body .prop {
+    text-align: left;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.prop-body {
     flex-grow: 1; /* Allow this div to grow and take available space */
     display: flex;
     flex-direction: column;
@@ -59,14 +143,14 @@ body {
 
 h1 {
     color: #000;
-    font-size: 24px;
+    font-size: 32px;
     line-height: 1.4;
     margin-bottom: 0px;
     margin-top: 0px;
 }
 
 ul, p, select, label {
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .disclaimer {
@@ -79,13 +163,60 @@ ul, p, select, label {
 /* Form styling */
 form {
     margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 0px;
 }
 
 label {
     margin-right: 10px;
 }
 
-button, select, input[type="submit"] {
+/* Custom styles for the select element */
+select {
+    padding: 12px 40px 12px 16px; /* Increased right padding for icon space */
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);    
+    font-size: 16px;
+    height: 52px;
+    width: 100%;
+    background-color: #fff;
+    margin: 10px 0;
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('/path/to/node_modules/feather-icons/dist/icons/chevron-down.svg');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 24px;
+}
+
+.custom-select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+}
+
+.custom-select-wrapper i {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+
+input[type="submit"]:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+
+
+button, input[type="submit"] {
     padding: 16px;
     border-radius: 8px;
     border: 1px solid #ddd;

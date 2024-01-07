@@ -1,0 +1,24 @@
+<!-- Inside your navbar.html or in the HTML where navbar is defined -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+<nav class="navbar">
+    <div class="navbar-logo">
+        <a href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sparky Logo">
+        </a>
+    </div>
+    <div class="navbar-menu">
+        <button class="dropdown-button" onclick="toggleDropdown()">
+            <i data-feather="user"></i>
+        </button>
+        <div class="dropdown-content" id="navbar-dropdown">
+            <a href="#">Link 1</a>
+            <a href="#">Link 2</a>
+            <a href="{{ url_for('logout') }}">Sign out</a>
+        </div>
+    </div>
+</nav>
+
+<script>
+    feather.replace();
+</script>

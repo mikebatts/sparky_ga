@@ -125,12 +125,15 @@ def oauth2callback():
         account_summaries = admin_client.list_account_summaries(ListAccountSummariesRequest())
         for account in account_summaries.account_summaries:
             for property_summary in account.property_summaries:
+                formatted_name = f"{property_summary.display_name} ({property_summary.property.split('/')[-1]})"
                 properties_list.append({
                     'account_id': account.account,
                     'property_id': property_summary.property,
-                    'property_name': property_summary.display_name,
+                    'formatted_name': formatted_name,
                     'property_type': 'GA4'
                 })
+                print(properties_list)  # Add this line
+
     except Exception as e:
         print(f"Error fetching GA4 properties: {e}")
 

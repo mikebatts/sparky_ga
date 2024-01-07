@@ -4,27 +4,57 @@
     <title>Select Property - Sparky</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="/path/to/node_modules/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
+    {% include 'navbar.html' %}
     <div class="container">
-        <h1>Select Analytics Property</h1>
-        <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
-        <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
-            <label for="property">Select a property:</label>
-                <select name="property_id" id="property" onchange="setPropertyType()">
+
+        <div class="prop-body">
+            <h1 class="prop">Pull your report.</h1>
+            <p class="prop">Sparky interprets your analytics data for you, providing reports of how your business is doing.</p>
+            <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
+                <select name="property_id" id="property" onchange="checkPropertySelected()">
+                    <option value="" disabled selected>Select a property</option>
                     {% for property in session['properties'] %}
                         <option value="{{ property['property_id'] }}">{{ property['property_name'] }} ({{ property['property_type'] }} - {{ property['property_id'] }})</option>
                     {% endfor %}
                 </select>
-                <!-- Hidden field to store property type -->
-                <input type="hidden" name="property_type" id="property_type" value="">
-                <input type="submit" value="Fetch Data">
-        </form>
-        <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
-
+            </form>
+            <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
+        </div>
+        <div class="CTA-container">
+            
+            <!-- Hidden field to store property type -->
+            <input type="hidden" name="property_type" id="property_type" value="">
+            <input type="submit" value="Fetch Data" disabled id="submit-button">
+        </div>
     </div>
 
     <script>
+        
+
+        function toggleDropdown() {
+            var dropdownContent = document.getElementById("navbar-dropdown");
+            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
+        }
+
+     
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkPropertySelected();
+        });
+
+        function checkPropertySelected() {
+            var propertySelect = document.getElementById('property');
+            var submitButton = document.getElementById('submit-button');
+            // Check if the selected value is empty (placeholder selected)
+            submitButton.disabled = !propertySelect.value || propertySelect.value === "";
+        }
+
+
+
+
         function fetchAndDisplayInsights(event) {
             event.preventDefault();
 
@@ -127,4 +157,9 @@
         window.onload = setPropertyType;
     </script>
 </body>
+
+<script>
+    feather.replace();
+</script>
+
 </html>
