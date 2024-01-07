@@ -367,9 +367,14 @@ def format_strategies(text):
     formatted_strategies = []
     for strategy in strategies:
         if strategy.strip().startswith('-'):
-            emoji, strategy_text = strategy.lstrip('- ').split(' ', 1)
-            formatted_strategies.append(f"<div class='strategy'><span class='strategy-emoji'>{emoji}</span> {strategy_text}</div>")
+            parts = strategy.lstrip('-').strip().split(' ', 1)
+            if len(parts) > 1:
+                emoji = parts[0]
+                strategy_text = parts[1]
+                formatted_strategies.append(f"<div class='strategy'><span class='strategy-emoji'>{emoji}</span><span class='strategy-text'>{strategy_text}</span></div>")
     return ''.join(formatted_strategies)
+
+
 
 
 def format_paragraph(text):

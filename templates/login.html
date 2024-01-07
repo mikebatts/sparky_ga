@@ -2,13 +2,23 @@
 <html>
 <head>
     <title>Welcome to Sparky - Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Welcome to Sparky</h1>
-        <p>Click the button below to sign in with Google and select your Analytics account.</p>
-        <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
+        <div class="login-body">
+            <div class="login-vis-container">
+                <img class="login-vis" src="{{ url_for('static', filename='images/login-vis.png') }}" alt="Login Graphic">
+            </div>
+            <h1>Connect your Google<br>account to get started.</h1>
+            <p>Sparky interprets your analytics data for you, providing reports of how your business is doing.</p>
+        </div>
+        <div class="CTA-container">
+            <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
+            <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p>
+        </div>
+        
     </div>
 </body>
 </html>

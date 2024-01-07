@@ -4,16 +4,43 @@ body {
     color: #333;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.6;
-    padding: 20px;
     margin: 0;
     text-align: center;
+    height: 100vh; /* Full viewport height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .container {
-    max-width: 800px;
-    margin: 0 auto;
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Space out login-body and CTA-container */
+    height: 100%; /* Take full height of the parent */
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box; /* Include padding in width calculations */
 }
+
+.login-body {
+    flex-grow: 1; /* Allow this div to grow and take available space */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* Center content */
+}
+
+.CTA-container {
+    /* Stick to the bottom */
+}
+
+
+.login-vis {
+    width: 64%; /* Full width for mobile */
+    height: auto; /* Maintain aspect ratio */
+    margin-bottom: 20px; /* Adjust as needed for mobile layout */
+}
+
 
 #insights {
     text-align: left;
@@ -32,12 +59,21 @@ body {
 
 h1 {
     color: #000;
-    margin-bottom: 32px;
-    font-size: 2.5em;
+    font-size: 24px;
+    line-height: 1.4;
+    margin-bottom: 0px;
+    margin-top: 0px;
 }
 
 ul, p, select, label {
-    font-size: 1.2em;
+    font-size: 14px;
+}
+
+.disclaimer {
+    font-size: 12px;
+    line-height: 1.3;
+    font-weight: 500;
+    opacity: .5;
 }
 
 /* Form styling */
@@ -51,9 +87,9 @@ label {
 
 button, select, input[type="submit"] {
     padding: 16px;
-    margin: 16px 0;
     border-radius: 8px;
     border: 1px solid #ddd;
+    width: 100%;
 }
 
 button, input[type="submit"] {
@@ -65,7 +101,7 @@ button, input[type="submit"] {
 }
 
 button, input[type="submit"]:hover {
-    background-color: #7F8C8D;
+    background-color: #000;
 }
 
 /* Insights and loader styling */
@@ -115,4 +151,95 @@ footer {
     /* Styles for the strategy text */
     font-size: 16px;
     color: #333;
+}
+
+.strategy {
+    display: flex;
+}
+
+
+
+
+
+
+
+
+/* Responsive styles for desktop */
+@media screen and (min-width: 768px) {
+    .container {
+        max-width: 800px; /* Fixed maximum width for desktop */
+        margin: auto; /* Center the container */
+        padding: 84px;
+    }
+
+    h1 {
+        color: #000;
+        font-size: 32px;
+        line-height: 1.2;
+        margin-bottom: 0px;
+        margin-top: 0px;
+    }
+
+    .login-vis {
+        /* Styles for the image itself */
+        width: 50%; /* Make the image expand to fill its container */
+        height: auto; /* Maintain the aspect ratio */
+
+    }
+
+    .insights-container {
+        width: 100%; /* Use full width of the container */
+        padding: 40px; /* More padding for a spacious layout */
+        border-radius: 16px;
+    }
+
+    /* Adjusting form and button sizes for desktop */
+    button, select, input[type="submit"] {
+        padding: 24px;
+        font-size: 16px;
+        width: auto;
+    }
+
+    /* Adjusting the font size for list items */
+    ul, p, select, label {
+        font-size: 16px;
+        width:530px;
+    }
+
+    .disclaimer {
+        font-size: 12px;
+        line-height: 1.3;
+        font-weight: 500;
+        opacity: .5;
+        width: 100%;
+    }
+
+    /* Additional styles for insights sections */
+    .summary, .key-insights, .actionable-strategies {
+        padding: 20px; /* More padding for desktop */
+        margin-bottom: 30px;
+    }
+
+    .summary h3, .key-insights h3, .actionable-strategies h3 {
+        margin-bottom: 15px;
+    }
+
+    /* Strategy section adjustments */
+    .strategy-emoji {
+        font-size: 24px; /* Larger emoji size */
+    }
+
+    .strategy-text {
+        font-size: 18px; /* Larger text size for readability */
+    }
+
+    .strategy {
+        align-items: center; /* Align items vertically */
+        margin-bottom: 10px; /* Spacing between strategy items */
+    }
+
+    /* Footer style adjustments */
+    footer {
+        font-size: 1.2em;
+    }
 }
