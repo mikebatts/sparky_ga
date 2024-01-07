@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Select Property - Sparky</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Select Analytics Property</h1>
+        <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
+        <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
+            <label for="property">Select a property:</label>
+                <select name="property_id" id="property" onchange="setPropertyType()">
+                    {% for property in session['properties'] %}
+                        <option value="{{ property['property_id'] }}">{{ property['property_name'] }} ({{ property['property_type'] }} - {{ property['property_id'] }})</option>
+                    {% endfor %}
+                </select>
+                <!-- Hidden field to store property type -->
+                <input type="hidden" name="property_type" id="property_type" value="">
+                <input type="submit" value="Fetch Data">
+        </form>
+        <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
+
+    </div>
+
+    <script>
+        function fetchAndDisplayInsights(event) {
+            event.preventDefault();
+
+            var propertyId = document.getElementById('property').value;
+            var formData = new FormData();
+            formData.append('property_id', propertyId);
+
+            document.getElementById('loader').style.display = 'block';
+            animateDots();
+
+            fetch('/fetch-data', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/report';  // Redirect to the report page
+                } else {
+                    throw new Error('Network response was not ok.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching insights:', error);
+                document.getElementById('loader').style.display = 'none';
+            });
+        }
+
+
+        // function displayFormattedInsights(text) {
+        //     var summary = extractSection(text, "Summary");
+        //     var keyInsights = extractSection(text, "Key Insights");
+        //     var actionableStrategies = extractSection(text, "Actionable Strategies");
+        //     console.log('Actionable Strategies:', actionableStrategies);  // Debugging line
+
+
+        //     document.getElementById('summary-content').innerHTML = formatParagraph(summary);
+        //     document.getElementById('key-insights-content').innerHTML = formatInsights(keyInsights);
+        //     document.getElementById('actionable-strategies-content').innerHTML = formatStrategies(actionableStrategies);
+        // }
+
+        // function formatInsights(text) {
+        //     var insights = text.split('\n').filter(item => item.trim().startsWith('-') || item.trim().startsWith('*'));
+        //     return insights.map(insight => {
+        //         var formattedInsight = insight.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').split(' - '); // Remove double asterisks
+        //         return `<div class='insight'><span class='insight-title'>${formattedInsight[0].trim()}</span>: <span class='insight-data'>${formattedInsight[1]}</span> - <span class='insight-comment'>${formattedInsight.slice(2).join(' - ').trim()}</span></div>`;
+        //     }).join('<br>');
+        // }
+
+        // function formatStrategies(text) {
+        //     var lines = text.split('\n');
+        //     var formattedStrategies = [];
+        //     lines.forEach(line => {
+        //         var match = line.match(/-\s*([\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*)(.*)/u);
+        //         if (match) {
+        //             var emoji = match[1];
+        //             var strategyText = match[2].trim().replace(/\*\*/g, ''); // Remove double asterisks
+        //             formattedStrategies.push(
+        //                 `<li class="strategy"><span class="strategy-emoji">${emoji}</span> <span class="strategy-text">${strategyText}</span></li>`
+        //             );
+        //         }
+        //     });
+        //     return '<ul>' + formattedStrategies.join('') + '</ul>';
+        // }
+
+
+        // function formatParagraph(text) {
+        //     return text.replace(/\n/g, '<br><br>');
+        // }
+
+        function extractSection(text, sectionTitle) {
+            var regex;
+            if (sectionTitle === "Actionable Strategies") {
+                // Special handling for "Actionable Strategies" to account for variations in formatting
+                regex = new RegExp(`### ${sectionTitle}:.*\\n([\\s\\S]*?)(?=###|$)`);
+            } else {
+                // Regular expression for other sections
+                regex = new RegExp(`### ${sectionTitle}:[\\s\\S]*?\\n([\\s\\S]*?)\\n(?=###|$)`);
+            }
+            var match = text.match(regex);
+            return match ? match[1].trim() : 'No data available.';
+        }
+
+
+
+        function animateDots() {
+            var dots = document.getElementById("dots");
+            var count = 0;
+            setInterval(() => {
+                dots.innerHTML = ".".repeat(count % 4);
+                count++;
+            }, 500);
+        }
+
+        function setPropertyType() {
+            var property = document.getElementById('property');
+            var selectedProperty = property.options[property.selectedIndex].text;
+            var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
+            document.getElementById('property_type').value = propertyType;
+        }
+        window.onload = setPropertyType;
+    </script>
+</body>
+</html>

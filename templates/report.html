@@ -1,22 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Analytics Report</title>
+    <title>Report - Sparky</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Google Analytics Report</h1>
-    <table>
-        <tr>
-            <th>City</th>
-            <th>Active Users</th>
-        </tr>
-        {% for row in report_data %}
-        <tr>
-            <td>{{ row.city }}</td>
-            <td>{{ row.activeUsers }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="{{ url_for('index') }}">Back to Home</a>
+    <div class="container">
+        <h1>Insights</h1>
+        <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
+        <div id="insights">
+            <div class="insights-container">
+                <h2>Insights</h2>
+                <div class="summary">
+                    <h3>Summary</h3>
+                    <p id="summary-content">{{ summary|safe }}</p>
+                </div>
+                <div class="key-insights">
+                    <h3>Key Insights</h3>
+                    <p id="key-insights-content">{{ key_insights|safe }}</p>
+                </div>
+                <div class="actionable-strategies">
+                    <h3>Actionable Strategies</h3>
+                    <p id="actionable-strategies-content">{{ actionable_strategies|safe }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

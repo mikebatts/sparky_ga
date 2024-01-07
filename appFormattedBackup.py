@@ -2,7 +2,6 @@
 
 
 import json
-import re
 from dotenv import load_dotenv
 from google.analytics.data_v1beta import BetaAnalyticsDataClient
 from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dimension, Metric, FilterExpression, Filter, NumericValue
@@ -56,17 +55,7 @@ def summarize_ga_data(combined_data):
 
 @app.route('/')
 def index():
-    if 'credentials' not in session:
-        # If the user is not logged in, show the login page
-        return render_template('login.html')
-    elif 'properties' not in session or 'selected_property' not in session:
-        # If the user is logged in but hasn't selected a property, show property selection
-        return render_template('select_property.html')
-    else:
-        # If the user has selected a property, show the report
-        return render_template('report.html')
-
-
+    return render_template('index.html')
 
 @app.route('/authorize')
 def authorize():
@@ -146,9 +135,6 @@ def oauth2callback():
 def fetch_data():
     property_id = request.form['property_id']
     property_type = "GA4" if "UA-" not in property_id else "UA"
-
-    # Set the selected property in the session
-    session['selected_property'] = property_id
 
     credentials = google_credentials.Credentials(**session['credentials'])
 
@@ -312,71 +298,13 @@ def fetch_data():
         
         # Directly use the plain text response
         insights_text = response.choices[0].message.content
-        session['insights'] = insights_text  # Save insights in the session
 
-        return redirect(url_for('show_report'))  # Redirect to a new route
+        # Return insights as plain text
+        return jsonify({'gpt4_insight': {'text': insights_text}})
 
 
 
  
-@app.route('/report')
-def show_report():
-    if 'insights' in session:
-        insights = session['insights']
-        # Extract and format each section here
-        summary = extract_section(insights, "Summary")
-        key_insights = extract_section(insights, "Key Insights")
-        actionable_strategies = extract_section(insights, "Actionable Strategies")
-        return render_template('report.html', summary=summary, key_insights=key_insights, actionable_strategies=actionable_strategies)
-    return redirect(url_for('index'))
-
-def extract_section(text, section_title):
-    start_pattern = f"### {section_title}:\n"
-    end_pattern = "\n###"
-
-    start_idx = text.find(start_pattern)
-    if start_idx == -1:
-        return "No data available."
-    start_idx += len(start_pattern)
-
-    end_idx = text.find(end_pattern, start_idx)
-    if end_idx == -1:
-        end_idx = len(text)
-
-    extracted_text = text[start_idx:end_idx].strip()
-
-    if section_title == "Key Insights":
-        return format_insights(extracted_text)
-    elif section_title == "Actionable Strategies":
-        return format_strategies(extracted_text)
-    else:
-        return format_paragraph(extracted_text)
-
-def format_insights(text):
-    insights = text.split('\n')
-    formatted_insights = []
-    for insight in insights:
-        insight = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', insight)  # Format bold text
-        if insight.strip().startswith('-'):
-            insight = insight.lstrip('- ').strip()
-            formatted_insights.append(f"<div class='insight'>{insight}</div>")
-    return '<br>'.join(formatted_insights)
-
-def format_strategies(text):
-    strategies = text.split('\n')
-    formatted_strategies = []
-    for strategy in strategies:
-        if strategy.strip().startswith('-'):
-            emoji, strategy_text = strategy.lstrip('- ').split(' ', 1)
-            formatted_strategies.append(f"<div class='strategy'><span class='strategy-emoji'>{emoji}</span> {strategy_text}</div>")
-    return ''.join(formatted_strategies)
-
-
-def format_paragraph(text):
-    paragraphs = text.split('\n')
-    return '<br>'.join(p.strip() for p in paragraphs if p.strip())
-
-
 
 
 @app.route('/logout')
@@ -384,10 +312,8 @@ def logout():
     # Clear session data
     session.pop('credentials', None)
     session.pop('properties', None)
-    session.pop('selected_property', None)
     print("User has been logged out")
     return redirect(url_for('index'))
-
 
 def credentials_to_dict(credentials):
     return {
