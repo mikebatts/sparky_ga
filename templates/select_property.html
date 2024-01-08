@@ -11,23 +11,34 @@
     <div class="container">
 
         <div class="prop-body">
-            <h1 class="prop">Pull your report.</h1>
-            <p class="prop">Sparky interprets your analytics data for you, providing reports of how your business is doing.</p>
-            <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
-                <select name="property_id" id="property" onchange="checkPropertySelected()">
-                    <option value="" disabled selected>Select a property</option>
-                    {% for property in session['properties'] %}
-                        <option value="{{ property['property_id'] }}">{{ property['property_name'] }} ({{ property['property_type'] }} - {{ property['property_id'] }})</option>
-                    {% endfor %}
-                </select>
-            </form>
-            <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
-        </div>
-        <div class="CTA-container">
+            <h1 class="prop">Go fetch.</h1>
+            <p class="prop">Sparky uses AI to interpret your analytics for you, and gives you comprehensive insights. Select a property from your account and fetch a report.</p>
+            <select name="property_id" id="property" onchange="checkPropertySelected()">
+                <option value="" disabled selected>Select a property</option>
+                {% for property in session['properties'] %}
+                    <option value="{{ property['property_id'] }}">
+                        {{ property['formatted_name'] }}
+                    </option>
+                {% endfor %}
+            </select>
             
+            
+            
+            </form>
+        </div>
+
+        <div id="gif-loader" style="display:none; text-align:center;">
+            <img src="{{ url_for('static', filename='images/loader.gif') }}" alt="Loading...">
+        </div>
+
+        <div class="CTA-container">
+            <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
+            <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
+
+
             <!-- Hidden field to store property type -->
             <input type="hidden" name="property_type" id="property_type" value="">
-            <input type="submit" value="Fetch Data" disabled id="submit-button">
+            <input type="submit" value="Fetch Report" disabled id="submit-button">
         </div>
     </div>
 
@@ -62,8 +73,12 @@
             var formData = new FormData();
             formData.append('property_id', propertyId);
 
-            document.getElementById('loader').style.display = 'block';
-            animateDots();
+            var gifLoader = document.getElementById('gif-loader');
+            var submitButton = document.getElementById('submit-button');
+            gifLoader.style.display = 'block'; // Show GIF loader
+            submitButton.disabled = true; // Disable CTA
+            submitButton.value = 'Fetching'; // Update button text
+            animateDotsOnButton(submitButton); // Start dot animation on button
 
             fetch('/fetch-data', {
                 method: 'POST',
@@ -71,16 +86,19 @@
             })
             .then(response => {
                 if (response.ok) {
-                    window.location.href = '/report';  // Redirect to the report page
+                    window.location.href = '/report'; // Redirect to the report page
                 } else {
                     throw new Error('Network response was not ok.');
                 }
             })
             .catch(error => {
                 console.error('Error fetching insights:', error);
-                document.getElementById('loader').style.display = 'none';
+                gifLoader.style.display = 'none'; // Hide GIF loader
+                submitButton.disabled = false; // Re-enable CTA
+                submitButton.value = 'Fetch Report'; // Restore original button text
             });
         }
+
 
 
         // function displayFormattedInsights(text) {
@@ -139,12 +157,15 @@
 
 
 
-        function animateDots() {
-            var dots = document.getElementById("dots");
+        function animateDotsOnButton(button) {
             var count = 0;
-            setInterval(() => {
-                dots.innerHTML = ".".repeat(count % 4);
-                count++;
+            var interval = setInterval(() => {
+                if(button.disabled) {
+                    button.value = 'Fetching' + '.'.repeat(count % 4);
+                    count++;
+                } else {
+                    clearInterval(interval); // Clear interval when button is enabled
+                }
             }, 500);
         }
 

@@ -8,10 +8,11 @@
         </a>
     </div>
     <div class="navbar-menu">
-        <button class="dropdown-button" onclick="toggleDropdown()">
-            <i data-feather="user"></i>
+        <div class="navbar-menu">
+        <button class="dropdown-button" id="dropdownButton">
+            <i data-feather="menu"></i>
         </button>
-        <div class="dropdown-content" id="navbar-dropdown">
+        <div class="dropdown-content" id="navbarDropdown">
             <a href="#">Link 1</a>
             <a href="#">Link 2</a>
             <a href="{{ url_for('logout') }}">Sign out</a>
@@ -21,4 +22,14 @@
 
 <script>
     feather.replace();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropdownButton = document.getElementById('dropdownButton');
+        const navbarDropdown = document.getElementById('navbarDropdown');
+
+        dropdownButton.addEventListener('click', function() {
+            const isDisplayed = navbarDropdown.style.display === 'block';
+            navbarDropdown.style.display = isDisplayed ? 'none' : 'block';
+        });
+    });
 </script>

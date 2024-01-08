@@ -125,10 +125,11 @@ def oauth2callback():
         account_summaries = admin_client.list_account_summaries(ListAccountSummariesRequest())
         for account in account_summaries.account_summaries:
             for property_summary in account.property_summaries:
-                formatted_name = f"{property_summary.display_name} ({property_summary.property.split('/')[-1]})"
+                property_id = property_summary.property.split('/')[-1]
+                formatted_name = f"{property_summary.display_name} - {property_summary.property_type} ({property_id})"
                 properties_list.append({
                     'account_id': account.account,
-                    'property_id': property_summary.property,
+                    'property_id': property_id,
                     'formatted_name': formatted_name,
                     'property_type': 'GA4'
                 })
@@ -293,7 +294,7 @@ def fetch_data():
           "### Summary:\n"
           "Provide a concise 3-4 sentence summary. Avoid using a list format.\n"
           "### Key Insights:\n"
-          "Generate 4 key insights. Each insight should include: a one-word title, a numeric data point or one word metric, a percentage change (if applicable), and one brief explanatory comment no more than 100 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k (up 18%) - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
+          "Generate 4 key insights. Each insight should include: a one-word title, a numeric data point or one word metric (only list the number or one word, dont do '1.39 sessions/user', do '1.39'. Dont do '0.94 seconds', do '0.94s'. We need this to be as short as possible), and one brief explanatory comment no more than 90 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
           "### Actionable Strategies:\n"
           "Suggest 4 actionable strategies based on the data, 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
 
@@ -326,12 +327,18 @@ def fetch_data():
 def show_report():
     if 'insights' in session:
         insights = session['insights']
-        # Extract and format each section here
         summary = extract_section(insights, "Summary")
-        key_insights = extract_section(insights, "Key Insights")
-        actionable_strategies = extract_section(insights, "Actionable Strategies")
+        key_insights_raw = extract_section(insights, "Key Insights")
+        actionable_strategies_raw = extract_section(insights, "Actionable Strategies")
+
+        key_insights = format_insights(key_insights_raw) if key_insights_raw else []
+        actionable_strategies = format_strategies(actionable_strategies_raw) if actionable_strategies_raw else []
+
         return render_template('report.html', summary=summary, key_insights=key_insights, actionable_strategies=actionable_strategies)
     return redirect(url_for('index'))
+
+
+
 
 def extract_section(text, section_title):
     start_pattern = f"### {section_title}:\n"
@@ -339,7 +346,7 @@ def extract_section(text, section_title):
 
     start_idx = text.find(start_pattern)
     if start_idx == -1:
-        return "No data available."
+        return ""  # Return an empty string if section is not found
     start_idx += len(start_pattern)
 
     end_idx = text.find(end_pattern, start_idx)
@@ -347,35 +354,55 @@ def extract_section(text, section_title):
         end_idx = len(text)
 
     extracted_text = text[start_idx:end_idx].strip()
+    return extracted_text
 
-    if section_title == "Key Insights":
-        return format_insights(extracted_text)
-    elif section_title == "Actionable Strategies":
-        return format_strategies(extracted_text)
-    else:
-        return format_paragraph(extracted_text)
 
 def format_insights(text):
+    insights_list = []
     insights = text.split('\n')
-    formatted_insights = []
     for insight in insights:
-        insight = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', insight)  # Format bold text
         if insight.strip().startswith('-'):
             insight = insight.lstrip('- ').strip()
-            formatted_insights.append(f"<div class='insight'>{insight}</div>")
-    return '<br>'.join(formatted_insights)
+            # Split using both dash and colon as possible separators
+            parts = re.split(r' - |: ', insight)
+            if len(parts) >= 3:
+                # Remove double asterisks from both the title and comment
+                title = parts[0].replace('**', '').strip()
+                data = parts[1]
+                comment = parts[2].replace('**', '').strip()
+                insight_dict = {
+                    'title': title,
+                    'data': data,
+                    'comment': comment
+                }
+                insights_list.append(insight_dict)
+    return insights_list
+
+
+
+
+
+
+
 
 def format_strategies(text):
     strategies = text.split('\n')
     formatted_strategies = []
     for strategy in strategies:
         if strategy.strip().startswith('-'):
-            parts = strategy.lstrip('-').strip().split(' ', 1)
-            if len(parts) > 1:
+            # Remove the leading dash and extra space
+            strategy = strategy.lstrip('-').strip()
+
+            # Split the strategy text from the emoji
+            parts = re.split(r'\s+', strategy, maxsplit=1)
+            if len(parts) == 2:
                 emoji = parts[0]
                 strategy_text = parts[1]
-                formatted_strategies.append(f"<div class='strategy'><span class='strategy-emoji'>{emoji}</span><span class='strategy-text'>{strategy_text}</span></div>")
-    return ''.join(formatted_strategies)
+                formatted_strategies.append({'emoji': emoji, 'text': strategy_text})
+    return formatted_strategies
+
+
+
 
 
 

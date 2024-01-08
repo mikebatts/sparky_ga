@@ -9,30 +9,73 @@
 <body>
     {% include 'navbar.html' %}
     <div class="container">
-        <h1>Insights</h1>
-        <a href="{{ url_for('logout') }}"><button>Sign out</button></a>
-        <div id="insights">
-            <div class="insights-container">
-                <h2>Insights</h2>
-                <div class="summary">
-                    <h3>Summary</h3>
-                    <p id="summary-content">{{ summary|safe }}</p>
-                </div>
-                <div class="key-insights">
-                    <h3>Key Insights</h3>
-                    <p id="key-insights-content">{{ key_insights|safe }}</p>
-                </div>
-                <div class="actionable-strategies">
-                    <h3>Actionable Strategies</h3>
-                    <p id="actionable-strategies-content">{{ actionable_strategies|safe }}</p>
+        <div class="report-body">
+            <div class="report-heading">
+                <h1>Your Report</h1>
+                <div id="date-range"></div>
+            </div>
+    
+            <div id="insights">
+                <div class="insights-container">
+                    <div class="summary">
+                        <p id="summary-content">{{ summary|safe }}</p>
+                    </div>
+                    <!-- Key Insights Grid Layout -->
+                    <div class="key-insights">
+                        <h3>Key Insights</h3>
+                        <div class="grid-container">
+                            {% for insight in key_insights %}
+                                <div class="insight-item">
+                                    <div class="insight-title">{{ insight.title }}</div>
+                                    <div class="insight-data">{{ insight.data }}</div>
+                                    <div class="insight-comment">{{ insight.comment }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    
+                    <div class="actionable-strategies">
+                        <h3>Actionable Strategies</h3>
+                        <div class="strategies-container">
+                            {% for strategy in actionable_strategies %}
+                                <div class="strategy-item">
+                                    <span class="strategy-emoji">{{ strategy.emoji }}</span>
+                                    <span class="strategy-text">{{ strategy.text }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
         </div>
     </div>
 </body>
 
+
 <script>
     feather.replace();
+
+    document.addEventListener('DOMContentLoaded', function() {
+        displayDateRange();
+    });
+
+    function displayDateRange() {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 30);
+
+        const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedStartDate = startDate.toLocaleDateString("en-US", dateOptions);
+        const formattedEndDate = endDate.toLocaleDateString("en-US", dateOptions);
+
+        const dateRangeElement = document.getElementById('date-range');
+        if (dateRangeElement) {
+            dateRangeElement.textContent = `${formattedStartDate} - ${formattedEndDate}`;
+        }
+    }
+
 </script>
 
 </html>
