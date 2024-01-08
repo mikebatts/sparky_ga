@@ -64,6 +64,7 @@ def summarize_ga_data(combined_data):
 @app.route('/')
 def index():
     credentials_valid = False
+
     if 'credentials' in session:
         credentials = google_credentials.Credentials(**session['credentials'])
         credentials_valid = is_credentials_valid(credentials)
@@ -329,6 +330,20 @@ def fetch_data():
             ],
             max_tokens=300  # Adjust as needed
         )
+
+        ## Parsing Error
+        # raise Exception("Test error")
+
+
+        try:
+            insights_text = response.choices[0].message.content
+            session['insights'] = insights_text
+            return redirect(url_for('show_report'))
+        except Exception as e:
+            print(f"Error processing OpenAI response: {e}")
+            flash("Whoops, found a treat instead. Try again", "error")  # Using flash to send an error message
+            return redirect(url_for('index'))
+
 
         # Print the AI response in the terminal for debugging
         print("OpenAI Response:", response.choices[0].message.content)
