@@ -1,5 +1,10 @@
 /* General styles */
 
+.alert {
+    color: red;
+    padding:16px;
+}
+
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -38,13 +43,21 @@
 
 .dropdown-content a {
     color: black;
-    padding: 12px 16px;
+    padding: 8px 16px;
     text-decoration: none;
     display: block;
+    text-align: left;
 }
 
 .dropdown-content a:hover {
-    background-color: #ddd;
+    background-color: #f1f1f1;
+}
+
+.dropdown-button:hover {
+    opacity: 0.5; /* Adjust the opacity on hover */
+    transition: ease-in-out 0.2s;
+    background-color: #f1f1f1;
+
 }
 
 .dropdown-button {
@@ -55,6 +68,8 @@
     cursor: pointer;
     padding: 8px;
     padding-bottom: 4px;
+    transition: ease-in-out 0.2s;
+
 }
 
 .dropdown-button svg {
@@ -191,7 +206,7 @@ h1 {
     font-size: 32px;
     line-height: 1.4;
     margin-bottom: 2px;
-    margin-top: 0px;
+    margin-top: 4px;
 }
 
 ul, p, select, label {
@@ -268,10 +283,7 @@ button, input[type="submit"] {
     font-weight: 600;
 }
 
-button:hover, input[type="submit"]:hover {
-    /* Only change color if the button is not disabled */
-    background-color: #000;
-}
+
 
 input[type="submit"]:disabled {
     background-color: rgba(0, 0, 0, 0.08);;
@@ -402,17 +414,31 @@ footer {
 
 /* Responsive styles for desktop */
 @media screen and (min-width: 768px) {
+    .body {
+        background-color: #fff;
+        color: #333;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        text-align: center;
+        min-height: 100vh; /* Ensure it covers at least the entire viewport */
+    }
+    
     .container {
-        max-width: 800px; /* Fixed maximum width for desktop */
-        margin: auto; /* Center the container */
-        padding: 84px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        width: 800px;
+        padding: 16px;
+        box-sizing: border-box;
+        margin: 0 auto;
     }
 
     h1 {
         color: #000;
         font-size: 40px;
         line-height: 1.2;
-        margin-bottom: 0px;
+        margin-bottom: 4px;
         margin-top: 0px;
     }
 
@@ -435,7 +461,6 @@ footer {
 
     .insights-container {
         width: 100%; /* Use full width of the container */
-        padding: 40px; /* More padding for a spacious layout */
         border-radius: 16px;
     }
 
@@ -462,7 +487,6 @@ footer {
 
     /* Additional styles for insights sections */
     .summary, .key-insights, .actionable-strategies {
-        padding: 20px; /* More padding for desktop */
         margin-bottom: 30px;
     }
 

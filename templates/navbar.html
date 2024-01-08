@@ -13,8 +13,10 @@
             <i data-feather="menu"></i>
         </button>
         <div class="dropdown-content" id="navbarDropdown">
-            <a href="#">Link 1</a>
-            <a href="#">Link 2</a>
+            <a href="{{ url_for('reset_and_fetch') }}">Go Fetch</a>
+            <a target="_blank" href="https://www.usesparky.com/">About Sparky</a>
+            <a href="#">Privacy & Legal</a>
+            <a href="#">Contact</a>
             <a href="{{ url_for('logout') }}">Sign out</a>
         </div>
     </div>
@@ -28,8 +30,16 @@
         const navbarDropdown = document.getElementById('navbarDropdown');
 
         dropdownButton.addEventListener('click', function() {
-            const isDisplayed = navbarDropdown.style.display === 'block';
-            navbarDropdown.style.display = isDisplayed ? 'none' : 'block';
+            navbarDropdown.style.display = navbarDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Close the dropdown if clicked outside of it
+        document.addEventListener('click', function(event) {
+            if (!dropdownButton.contains(event.target) && !navbarDropdown.contains(event.target)) {
+                navbarDropdown.style.display = 'none';
+            }
         });
     });
+
+
 </script>

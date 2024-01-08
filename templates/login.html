@@ -16,6 +16,13 @@
             <p>Sparky interprets your analytics data for you, providing reports of how your business is doing.</p>
         </div>
         <div class="CTA-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                    <div class="alert {{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
             <a href="{{ url_for('authorize') }}"><button>Sign in with Google</button></a>
             <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p>
         </div>

@@ -9,7 +9,7 @@ from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dime
 from googleapiclient.discovery import build
 import os
 import openai
-from flask import Flask, jsonify, render_template, redirect, url_for, session, request
+from flask import Flask, jsonify, render_template, redirect, url_for, session, request, flash
 import google_auth_oauthlib.flow
 from google.oauth2 import credentials as google_credentials
 
@@ -26,6 +26,13 @@ app.secret_key = os.getenv('FLASK_APP_SECRET_KEY')
 # Replace with the actual path to your client_secret.json
 CLIENT_SECRETS_FILE = os.environ.get("GOOGLE_CLIENT_SECRETS")
 openai_client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+def is_credentials_valid(credentials):
+    """
+    Checks if the provided credentials are valid.
+    """
+    return credentials and not credentials.expired and credentials.valid
+    # return False
 
 
 def summarize_ga_data(combined_data):
@@ -56,20 +63,29 @@ def summarize_ga_data(combined_data):
 
 @app.route('/')
 def index():
-    if 'credentials' not in session:
-        # If the user is not logged in, show the login page
+    credentials_valid = False
+    if 'credentials' in session:
+        credentials = google_credentials.Credentials(**session['credentials'])
+        credentials_valid = is_credentials_valid(credentials)
+
+    if not credentials_valid:
+        # If the user is not logged in or credentials are invalid, show the login page
         return render_template('login.html')
     elif 'properties' not in session or 'selected_property' not in session:
         # If the user is logged in but hasn't selected a property, show property selection
-        return render_template('select_property.html')
+        return render_template('select_property.html', credentials_valid=credentials_valid)
     else:
         # If the user has selected a property, show the report
-        return render_template('report.html')
+        return render_template('report.html', credentials_valid=credentials_valid)
+
 
 
 
 @app.route('/authorize')
 def authorize():
+    # Clear existing session data
+    session.clear()
+
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=['https://www.googleapis.com/auth/analytics.readonly'])
@@ -154,8 +170,12 @@ def fetch_data():
     # Set the selected property in the session
     session['selected_property'] = property_id
 
-    credentials = google_credentials.Credentials(**session['credentials'])
-
+    # Check if credentials are valid
+    credentials = google_credentials.Credentials(**session.get('credentials', {}))
+    if 'credentials' not in session or not is_credentials_valid(google_credentials.Credentials(**session['credentials'])):
+        flash("Your session has expired. Please log in again.", "error")
+        return redirect(url_for('index'))
+    
     if property_type == "GA4":
         numeric_property_id = property_id.split('/')[-1]
         client = BetaAnalyticsDataClient(credentials=credentials)
@@ -296,7 +316,7 @@ def fetch_data():
           "### Key Insights:\n"
           "Generate 4 key insights. Each insight should include: a one-word title, a numeric data point or one word metric (only list the number or one word, dont do '1.39 sessions/user', do '1.39'. Dont do '0.94 seconds', do '0.94s'. We need this to be as short as possible), and one brief explanatory comment no more than 90 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
           "### Actionable Strategies:\n"
-          "Suggest 4 actionable strategies based on the data, 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
+          "Suggest 4 actionable strategies based on the data, 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- 📈 Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
 
 
         ## OpenAI API call with the new prompt
@@ -319,6 +339,8 @@ def fetch_data():
         session['insights'] = insights_text  # Save insights in the session
 
         return redirect(url_for('show_report'))  # Redirect to a new route
+
+
 
 
 
@@ -410,6 +432,28 @@ def format_strategies(text):
 def format_paragraph(text):
     paragraphs = text.split('\n')
     return '<br>'.join(p.strip() for p in paragraphs if p.strip())
+
+
+
+@app.route('/reset_and_fetch')
+def reset_and_fetch():
+    # Reset the selected property in the session
+    session.pop('selected_property', None)
+
+    # Check if credentials are valid
+    credentials_valid = False
+    if 'credentials' in session:
+        credentials = google_credentials.Credentials(**session['credentials'])
+        credentials_valid = is_credentials_valid(credentials)
+
+    if credentials_valid:
+        # If credentials are valid, redirect to property selection
+        return redirect(url_for('index'))
+    else:
+        # If credentials are not valid, redirect to login
+        flash("Your session has expired. Please sign in with your Google account again.", "error")
+        return redirect(url_for('index'))
+
 
 
 
