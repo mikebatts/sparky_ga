@@ -3,7 +3,7 @@
 
 <nav class="navbar">
     <div class="navbar-logo">
-        <a href="{{ url_for('index') }}">
+        <a href="{{ url_for('main.index') }}">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sparky Logo">
         </a>
     </div>
@@ -13,11 +13,11 @@
             <i data-feather="menu"></i>
         </button>
         <div class="dropdown-content" id="navbarDropdown">
-            <a href="{{ url_for('reset_and_fetch') }}">Go Fetch</a>
+            <a href="{{ url_for('main.reset_and_fetch') }}">Go Fetch</a>
             <a target="_blank" href="https://www.usesparky.com/">About Sparky</a>
             <a href="#">Privacy & Legal</a>
             <a href="#">Contact</a>
-            <a href="{{ url_for('logout') }}">Sign out</a>
+            <a href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>
     </div>
 </nav>

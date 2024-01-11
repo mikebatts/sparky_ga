@@ -15,7 +15,7 @@ from google.oauth2 import credentials as google_credentials
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 
-from langchain_handler import initialize_langchain_agent, process_json_data
+from backups.langchain_handler import initialize_langchain_agent, process_json_data
 
 from langchain.prompts.chat import (
     ChatPromptTemplate,

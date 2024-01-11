@@ -210,6 +210,8 @@ body {
     line-height: normal;
     letter-spacing: -0.5px;
     opacity: 0.32;
+    position: relative;
+    z-index: -1;
 }
 
 

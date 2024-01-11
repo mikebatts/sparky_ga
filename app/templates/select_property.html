@@ -39,7 +39,7 @@
         {% endwith %}
         <div class="CTA-container">
             <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
-            <form action="{{ url_for('fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
+            <form action="{{ url_for('analytics.fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
 
 
             <!-- Hidden field to store property type -->
@@ -86,13 +86,13 @@
             submitButton.value = 'Fetching'; // Update button text
             animateDotsOnButton(submitButton); // Start dot animation on button
 
-            fetch('/fetch-data', {
+            fetch('/analytics/fetch-data', {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
                 if (response.ok) {
-                    window.location.href = '/report'; // Redirect to the report page
+                    window.location.href = '/reports/report'; // Redirect to the report page
                 } else {
                     throw new Error('Network response was not ok.');
                 }
