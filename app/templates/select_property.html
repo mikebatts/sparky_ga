@@ -3,30 +3,41 @@
 <head>
     <title>Select Property - Sparky</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- VanillaJS Datepicker CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/css/datepicker.min.css">
+    
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Feather Icons (if you still need this) -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="/path/to/node_modules/feather-icons/dist/feather.min.js"></script>
+
 </head>
 <body>
     {% include 'navbar.html' %}
     <div class="container">
-
         <div class="prop-body">
-            <h1 class="prop">Go fetch.</h1>
+            <h1 class="prop">Fetch your report.</h1>
             <p class="prop">Sparky uses AI to interpret your analytics for you, and gives you comprehensive insights. Select a property from your account and fetch a report.</p>
-            <select name="property_id" id="property" onchange="checkPropertySelected()">
-                <option value="" disabled selected>Select a property</option>
-                {% for property in session['properties'] %}
-                    <option value="{{ property['property_id'] }}">
-                        {{ property['formatted_name'] }}
-                    </option>
-                {% endfor %}
-            </select>
-            
-            
-            
-            </form>
-        </div>
 
+            <div class="fields">
+                <div id="date-range-picker">
+                    <input type="text" id="start-date" name="start_date" placeholder="Start Date">
+                    <input type="text" id="end-date" name="end_date" placeholder="End Date">
+                </div>
+                
+                <select name="property_id" id="property" onchange="checkPropertySelected()">
+                    <option value="" disabled selected>Select a property</option>
+                    {% for property in session['properties'] %}
+                        <option value="{{ property['property_id'] }}">
+                            {{ property['formatted_name'] }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+
+        </div>
         <div id="gif-loader" style="display:none; text-align:center;">
             <img src="{{ url_for('static', filename='images/loader.gif') }}" alt="Loading...">
         </div>
@@ -40,153 +51,133 @@
         <div class="CTA-container">
             <div id="loader" style="display:none;">Loading data<span id="dots"></span></div>
             <form action="{{ url_for('analytics.fetch_data') }}" method="post" onsubmit="fetchAndDisplayInsights(event)">
-
-
-            <!-- Hidden field to store property type -->
-            <input type="hidden" name="property_type" id="property_type" value="">
-            <input type="submit" value="Fetch Report" disabled id="submit-button">
+                <input type="hidden" name="property_type" id="property_type" value="">
+                <input type="submit" value="Go Fetch" disabled id="submit-button">
+            </form>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/js/datepicker-full.min.js"></script>
     <script>
-        
-
         function toggleDropdown() {
             var dropdownContent = document.getElementById("navbar-dropdown");
             dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
         }
 
-     
-
-        document.addEventListener('DOMContentLoaded', function() {
-            checkPropertySelected();
-        });
-
         function checkPropertySelected() {
             var propertySelect = document.getElementById('property');
             var submitButton = document.getElementById('submit-button');
-            // Check if the selected value is empty (placeholder selected)
             submitButton.disabled = !propertySelect.value || propertySelect.value === "";
-        }
 
-
-
-
-        function fetchAndDisplayInsights(event) {
-            event.preventDefault();
-
-            var propertyId = document.getElementById('property').value;
-            var formData = new FormData();
-            formData.append('property_id', propertyId);
-
-            var gifLoader = document.getElementById('gif-loader');
-            var submitButton = document.getElementById('submit-button');
-            gifLoader.style.display = 'block'; // Show GIF loader
-            submitButton.disabled = true; // Disable CTA
-            submitButton.value = 'Fetching'; // Update button text
-            animateDotsOnButton(submitButton); // Start dot animation on button
-
-            fetch('/analytics/fetch-data', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.ok) {
-                    window.location.href = '/reports/report'; // Redirect to the report page
-                } else {
-                    throw new Error('Network response was not ok.');
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching insights:', error);
-                gifLoader.style.display = 'none'; // Hide GIF loader
-                submitButton.disabled = false; // Re-enable CTA
-                submitButton.value = 'Fetch Report'; // Restore original button text
-            });
-        }
-
-
-
-        // function displayFormattedInsights(text) {
-        //     var summary = extractSection(text, "Summary");
-        //     var keyInsights = extractSection(text, "Key Insights");
-        //     var actionableStrategies = extractSection(text, "Actionable Strategies");
-        //     console.log('Actionable Strategies:', actionableStrategies);  // Debugging line
-
-
-        //     document.getElementById('summary-content').innerHTML = formatParagraph(summary);
-        //     document.getElementById('key-insights-content').innerHTML = formatInsights(keyInsights);
-        //     document.getElementById('actionable-strategies-content').innerHTML = formatStrategies(actionableStrategies);
-        // }
-
-        // function formatInsights(text) {
-        //     var insights = text.split('\n').filter(item => item.trim().startsWith('-') || item.trim().startsWith('*'));
-        //     return insights.map(insight => {
-        //         var formattedInsight = insight.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').split(' - '); // Remove double asterisks
-        //         return `<div class='insight'><span class='insight-title'>${formattedInsight[0].trim()}</span>: <span class='insight-data'>${formattedInsight[1]}</span> - <span class='insight-comment'>${formattedInsight.slice(2).join(' - ').trim()}</span></div>`;
-        //     }).join('<br>');
-        // }
-
-        // function formatStrategies(text) {
-        //     var lines = text.split('\n');
-        //     var formattedStrategies = [];
-        //     lines.forEach(line => {
-        //         var match = line.match(/-\s*([\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]\s*)(.*)/u);
-        //         if (match) {
-        //             var emoji = match[1];
-        //             var strategyText = match[2].trim().replace(/\*\*/g, ''); // Remove double asterisks
-        //             formattedStrategies.push(
-        //                 `<li class="strategy"><span class="strategy-emoji">${emoji}</span> <span class="strategy-text">${strategyText}</span></li>`
-        //             );
-        //         }
-        //     });
-        //     return '<ul>' + formattedStrategies.join('') + '</ul>';
-        // }
-
-
-        // function formatParagraph(text) {
-        //     return text.replace(/\n/g, '<br><br>');
-        // }
-
-        function extractSection(text, sectionTitle) {
-            var regex;
-            if (sectionTitle === "Actionable Strategies") {
-                // Special handling for "Actionable Strategies" to account for variations in formatting
-                regex = new RegExp(`### ${sectionTitle}:.*\\n([\\s\\S]*?)(?=###|$)`);
+            // Update select color based on selection
+            if (propertySelect.value) {
+                propertySelect.style.color = "black";
             } else {
-                // Regular expression for other sections
-                regex = new RegExp(`### ${sectionTitle}:[\\s\\S]*?\\n([\\s\\S]*?)\\n(?=###|$)`);
+                propertySelect.style.color = "grey";
             }
-            var match = text.match(regex);
-            return match ? match[1].trim() : 'No data available.';
         }
 
 
+        document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
 
-        function animateDotsOnButton(button) {
-            var count = 0;
-            var interval = setInterval(() => {
-                if(button.disabled) {
-                    button.value = 'Fetching' + '.'.repeat(count % 4);
-                    count++;
-                } else {
-                    clearInterval(interval); // Clear interval when button is enabled
-                }
-            }, 500);
-        }
+            // Get today's date and set max date to yesterday
+            const today = new Date();
+            const maxDate = new Date();
+            maxDate.setDate(today.getDate() - 1);
 
-        function setPropertyType() {
-            var property = document.getElementById('property');
-            var selectedProperty = property.options[property.selectedIndex].text;
-            var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
-            document.getElementById('property_type').value = propertyType;
-        }
-        window.onload = setPropertyType;
-    </script>
-</body>
+            // Initialize the Date Range Picker without default dates
+            new DateRangePicker(document.getElementById('date-range-picker'), {
+                format: 'yyyy-mm-dd',
+                autohide: true,
+                inputs: [startDateInput, endDateInput],
+                maxDate: maxDate // Set max date as yesterday
+            });
+
+            // Keep placeholders for start and end dates
+            startDateInput.placeholder = "Start Date";
+            endDateInput.placeholder = "End Date";
+
+            checkPropertySelected();
+        });
+
+        document.addEventListener('click', function(event) {
+            var withinDatePicker = document.getElementById('date-range-picker').contains(event.target);
+            var datepickerIsOpen = !startDateInput.value && !endDateInput.value;
+            if (!withinDatePicker && datepickerIsOpen) {
+                // Manually hide the datepicker here
+                // You might need to call a method from the datepicker library or trigger an event
+            }
+        });
+
+
+
+
+
+
+    function fetchAndDisplayInsights(event) {
+        event.preventDefault();
+        var propertyId = document.getElementById('property').value;
+        var formData = new FormData();
+        formData.append('property_id', propertyId);
+
+        // Append date range to formData using the correct ID
+        var startDate = document.getElementById('start-date').value;
+        var endDate = document.getElementById('end-date').value;
+        var dateRange = `${startDate} - ${endDate}`;
+        formData.append('date_range', dateRange);
+
+        var gifLoader = document.getElementById('gif-loader');
+        var submitButton = document.getElementById('submit-button');
+        gifLoader.style.display = 'block';
+        submitButton.disabled = true;
+        submitButton.value = 'Fetching';
+
+        fetch('/analytics/fetch-data', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = '/reports/report';
+            } else {
+                throw new Error('Network response was not ok.');
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching insights:', error);
+            gifLoader.style.display = 'none';
+            submitButton.disabled = false;
+            submitButton.value = 'Fetch Report';
+        });
+    }
+
+    function animateDotsOnButton(button) {
+        var count = 0;
+        var interval = setInterval(() => {
+            if(button.disabled) {
+                button.value = 'Fetching' + '.'.repeat(count % 4);
+                count++;
+            } else {
+                clearInterval(interval);
+            }
+        }, 500);
+    }
+
+    function setPropertyType() {
+        var property = document.getElementById('property');
+        var selectedProperty = property.options[property.selectedIndex].text;
+        var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
+        document.getElementById('property_type').value = propertyType;
+    }
+
+    window.onload = setPropertyType;
+</script>
 
 <script>
     feather.replace();
 </script>
 
+</body>
 </html>

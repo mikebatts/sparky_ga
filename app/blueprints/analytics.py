@@ -5,6 +5,8 @@ from app.utils import is_credentials_valid, summarize_ga_data
 from app.config import openai_client
 from google.oauth2 import credentials as google_credentials
 import json, logging
+from datetime import datetime
+
 
 analytics = Blueprint('analytics', __name__, url_prefix='/analytics')
 
@@ -22,6 +24,7 @@ def fetch_data():
         if not is_credentials_valid(credentials):
             flash("Your session has expired. Please log in again.", "error")
             return redirect(url_for('main.index'))
+            
 
         if property_type == "GA4":
             numeric_property_id = property_id.split('/')[-1]
@@ -112,10 +115,15 @@ def fetch_data():
                 "rows": []
             }
 
+            # Retrieve and split the date range from form data
+            date_range = request.form['date_range']
+            start_date, end_date = date_range.split(' - ') if ' - ' in date_range else (date_range, date_range)
+
+
             # Batch 1 request
             ga4_request_1 = RunReportRequest(
                 property=f"properties/{numeric_property_id}",
-                date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
                 dimensions=batch_1_dimensions,
                 metrics=batch_1_metrics
             )
@@ -125,7 +133,7 @@ def fetch_data():
             # Batch 2 request
             ga4_request_2 = RunReportRequest(
                 property=f"properties/{numeric_property_id}",
-                date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
                 dimensions=batch_2_dimensions,
                 metrics=batch_2_metrics
             )
@@ -135,7 +143,7 @@ def fetch_data():
             # Batch 3 request
             ga4_request_3 = RunReportRequest(
                 property=f"properties/{numeric_property_id}",
-                date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
                 dimensions=batch_3_dimensions,
                 metrics=batch_3_metrics
             )
@@ -143,12 +151,17 @@ def fetch_data():
             # Batch 4 request
             ga4_request_4 = RunReportRequest(
                 property=f"properties/{numeric_property_id}",
-                date_ranges=[DateRange(start_date="30daysAgo", end_date="today")],
+                date_ranges=[DateRange(start_date=start_date, end_date=end_date)],
                 dimensions=batch_4_dimensions,
                 metrics=batch_4_metrics
             )
             response_4 = client.run_report(ga4_request_4)
             process_response(response_4, combined_response_data)
+
+            # Store the selected date range in session for displaying on report page
+            formatted_start_date = datetime.strptime(start_date, '%Y-%m-%d').strftime('%B %d')
+            formatted_end_date = datetime.strptime(end_date, '%Y-%m-%d').strftime('%B %d')
+            session['selected_date_range'] = f"{formatted_start_date} - {formatted_end_date}" if start_date != end_date else formatted_start_date
 
             # Convert the Google Analytics data to a string format
             ga_data_string = json.dumps(combined_response_data)

@@ -16,4 +16,4 @@ def show_report():
         actionable_strategies = format_strategies(actionable_strategies_raw) if actionable_strategies_raw else []
 
         return render_template('report.html', summary=summary, key_insights=key_insights, actionable_strategies=actionable_strategies)
-    return redirect(url_for('index'))
+    return redirect(url_for('main.index'))  # if 'index' is within the 'main' blueprint
