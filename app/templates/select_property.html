@@ -56,9 +56,34 @@
             </form>
         </div>
     </div>
+    <!-- Inside select_property.html -->
+
 
     <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/js/datepicker-full.min.js"></script>
     <script>
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/get_properties').then(response => {
+                if(response.ok) {
+                    return response.json();
+                } else {
+                    throw new Error('Failed to fetch properties');
+                }
+            }).then(data => {
+                var propertiesSelect = document.getElementById('property');
+                data.properties.forEach(property => {
+                    var option = document.createElement('option');
+                    option.value = property.property_id;
+                    option.textContent = property.formatted_name;
+                    propertiesSelect.appendChild(option);
+                });
+                checkPropertySelected();
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+
         function toggleDropdown() {
             var dropdownContent = document.getElementById("navbar-dropdown");
             dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';

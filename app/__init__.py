@@ -6,18 +6,19 @@ from .blueprints.analytics import analytics
 from .blueprints.reports import reports
 from .blueprints.main import main
 from .config import FLASK_APP_SECRET_KEY
+from .database import db  # Import the Firestore client
 import os
 import firebase_admin
-from firebase_admin import credentials, firestore
-from dotenv import load_dotenv
+from firebase_admin import credentials, initialize_app
 
-load_dotenv()  # load environment variables from .env file
-
-cred_path = os.getenv('FIREBASE_CREDENTIALS')  # get the path from the environment variable
+cred_path = os.getenv('FIREBASE_CREDENTIALS')
+storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
 cred = credentials.Certificate(cred_path)
-firebase_admin.initialize_app(cred)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': storage_bucket
+    })
 
-db = firestore.client()  # Now you can use this `db` object to interact with Firestore
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 

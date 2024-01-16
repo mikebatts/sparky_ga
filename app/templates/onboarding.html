@@ -1,0 +1,399 @@
+<!-- onboarding.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Onboarding | Sparky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body>
+
+    <div class="onboarding-nav">
+        <button onclick="goToPreviousStep()" class="onboard-nav-button" id="onboard-nav-button">
+            <i data-feather="chevron-left"></i>
+        </button>
+        <button onclick="closeOnboarding()" class="onboard-nav-button" id="closeButton">
+            <i data-feather="x"></i>
+        </button>
+    </div>
+    <!-- Onboarding Modal -->
+    <div id="onboardingModal" class="onboarding-modal">
+
+        <!-- Navigation Bar -->
+        <!-- <div class="onboarding-nav">
+            <button onclick="goToPreviousStep()" class="onboard-nav-button" id="onboard-nav-button">
+                <i data-feather="chevron-left"></i>
+            </button>
+            <button onclick="closeOnboarding()" class="onboard-nav-button" id="closeButton">
+                <i data-feather="x"></i>
+            </button>
+        </div> -->
+
+
+         <!-- Welcome Step (Taken from old welcome.html) -->
+         <div class="modal-step" id="step1">
+            <div class="container-onboarding">
+                <div class="onboarding-body">
+                    <h1>Welcome to Sparky.</h1>
+                    <p>Connect your analytics and set your goals. We'll analyze your data to provide insights and strategies tailored towards you care about.</p>
+                </div>
+                <div class="onboarding-CTA-container">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                            <div class="alert {{ category }}">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}             
+                    <button onclick="nextStep(2)">Sign up with Google</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Business Info Step (Taken from old business_info.html) -->
+        <div class="modal-step" id="step2" style="display:none;">
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <h1>Let's set up your business.</h1>
+                    <p>Tell us about your business so we can tailor Sparky's insights to your needs.</p>
+                    <form id="business-info-form" enctype="multipart/form-data">
+                        <!-- Avatar Upload -->
+                        <div class="form-group">
+                            <p for="business-name">Photo</p>
+                            <div class="avatar-upload-group">
+                                <label for="avatar-upload" class="avatar-label">
+                                    <div class="avatar-preview">
+                                        <img id="avatar-preview-image" src="#" alt="Avatar Preview" class="hidden"/>
+                                        <div id="avatar-placeholder" class="avatar-placeholder"></div>
+                                    </div>
+                                </label>
+                                <button type="button" class="upload-button" onclick="document.getElementById('avatar-upload').click();">Upload</button>
+                                <input type="file" id="avatar-upload" name="avatar" class="hidden" onchange="previewAvatar(event)">
+                            </div>       
+                        </div>
+
+                        <!-- Business Name Input -->
+                        <div class="form-group">
+                            <p for="business-name">Name</p>
+                            <input type="text" id="business-name" name="business_name" placeholder="Enter your business name">
+                        </div>
+
+                        <!-- Business Description Input -->
+                        <div class="form-group">
+                            <p for="business-description">Description</p>
+                            <textarea id="business-description" name="business_description" placeholder="Describe your business"></textarea>
+                        </div>
+
+                        <div class="onboarding-CTA-container">
+                            <button type="button" onclick="saveBusinessInfo()">Next</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goals Step -->
+        <div class="modal-step" id="step3" style="display:none;">
+            <h2>Set your goals.</h2>
+            <p>Prioritize your business goals, ranking from most to least important. This lets Sparky deliver more relevant and customized reports.</p>
+            <ul id="goalsList" class="draggable-list">
+                <li draggable="true">More visitors</li>
+                <li draggable="true">Higher sales</li>
+                <li draggable="true">Increase engagement</li>
+                <li draggable="true">Improve conversion rate</li>
+                <li draggable="true">Improve SEO rankings</li>
+            </ul>
+            <button onclick="previousStep(2)">Back</button>
+            <button onclick="nextStep(4)">Next</button>
+        </div>
+
+
+        <!-- Preferences Step -->
+        <div class="modal-step" id="step4" style="display:none;">
+            <h2>Set your preferences.</h2>
+            <p>Rank the metrics you care about, we’ll keep you informed about data points that matter to you the most.</p>
+            <ul id="preferencesList" class="draggable-list">
+                <li draggable="true">Traffic sources</li>
+                <li draggable="true">Top selling products</li>
+                <li draggable="true">Customer value</li>
+                <li draggable="true">Cart abandonment</li>
+                <li draggable="true">Bounce rate</li>
+            </ul>
+            <button onclick="previousStep(3)">Back</button>
+            <button onclick="saveGoalsAndPreferences()">Next</button>
+        </div>
+
+
+        <!-- Confirmation Step -->
+        <div class="modal-step" id="step5" style="display:none;">
+            <h2> You’re ready for your first report!</h2>
+            <p>You’ve successfully set up your profile, goals, and preferences. You may update these settings any time in the app.</p>
+            <!-- Content for Confirmation -->
+            <button onclick="previousStep(4)">Back</button>
+            <a href="{{ url_for('main.select_property') }}"><button>Get Started</button></a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const goalsList = document.getElementById('goalsList');
+            let draggedItem = null;
+
+            goalsList.addEventListener('dragstart', function(e) {
+                draggedItem = e.target;
+            });
+
+            goalsList.addEventListener('dragover', function(e) {
+                e.preventDefault();  // Necessary to allow dropping
+            });
+
+            goalsList.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (e.target.tagName === 'LI' && draggedItem !== e.target) {
+                    // Swap the positions of dragged item and drop target
+                    let temp = document.createElement('li');
+                    goalsList.insertBefore(temp, draggedItem);
+                    goalsList.insertBefore(draggedItem, e.target);
+                    goalsList.insertBefore(e.target, temp);
+                    goalsList.removeChild(temp);
+                }
+            });
+
+            const preferencesList = document.getElementById('preferencesList');
+                let draggedPreferenceItem = null;
+
+                preferencesList.addEventListener('dragstart', function(e) {
+                    draggedPreferenceItem = e.target;
+                });
+
+                preferencesList.addEventListener('dragover', function(e) {
+                    e.preventDefault();  // Necessary to allow dropping
+                });
+
+                preferencesList.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    if (e.target.tagName === 'LI' && draggedPreferenceItem !== e.target) {
+                        // Swap the positions of dragged item and drop target
+                        let temp = document.createElement('li');
+                        preferencesList.insertBefore(temp, draggedPreferenceItem);
+                        preferencesList.insertBefore(draggedPreferenceItem, e.target);
+                        preferencesList.insertBefore(e.target, temp);
+                        preferencesList.removeChild(temp);
+                    }
+                });
+            });
+        
+
+            let currentStep = 1;
+
+            function goToPreviousStep() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            }
+
+            function showStep(stepNumber) {
+                console.log('showStep called with step number: ' + stepNumber);
+                // Hide all steps
+                document.querySelectorAll('.modal-step').forEach(step => {
+                    step.style.display = 'none';
+                });
+                // Hide the back button if on the first step
+                var backButton = document.getElementById('onboard-nav-button');
+                if (stepNumber === 1) {
+                    console.log('Hiding back button because stepNumber is 1');
+                    backButton.style.display = 'none';
+                } else {
+                    console.log('Showing back button because stepNumber is greater than 1');
+                    backButton.style.display = 'block';
+                }
+                // Show the current step
+                var currentStepElement = document.getElementById('step' + stepNumber);
+                if (currentStepElement) {
+                    currentStepElement.style.display = 'block';
+                } else {
+                    console.error('No element found for step', stepNumber);
+                }
+            }
+
+
+
+            function closeOnboarding() {
+                // Redirect to a server route to handle closing
+                window.location.href = "{{ url_for('main.close_onboarding') }}";
+            }
+
+            function nextStep(stepNumber) {
+                console.log("Moving to next step:", stepNumber);
+                // Hide all steps
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                // Show next step
+                var nextStepElement = document.getElementById('step' + stepNumber);
+                console.log("Next step element:", nextStepElement);
+                if (nextStepElement) {
+                    nextStepElement.style.display = 'block';
+                } else {
+                    console.error('No element found for step', stepNumber);
+                }
+            }
+
+            function nextStep(stepNumber) {
+                console.log("Moving to next step:", stepNumber);
+                currentStep = stepNumber; // Update the current step
+                // Hide all steps
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                // Show next step
+                var nextStepElement = document.getElementById('step' + currentStep);
+                if (nextStepElement) {
+                    nextStepElement.style.display = 'block';
+                } else {
+                    console.error('No element found for step', currentStep);
+                }
+                showStep(currentStep); // Update the display based on the current step
+            }
+
+            function previousStep(stepNumber) {
+                console.log("Returning to previous step:", stepNumber);
+                currentStep = stepNumber; // Update the current step
+                // Hide all steps
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                // Show previous step
+                var prevStepElement = document.getElementById('step' + currentStep);
+                if (prevStepElement) {
+                    prevStepElement.style.display = 'block';
+                } else {
+                    console.error('No element found for step', currentStep);
+                }
+                showStep(currentStep); // Update the display based on the current step
+            }
+
+
+            function saveBusinessInfo() {
+                var formData = new FormData();
+                formData.append('businessName', document.getElementById('business-name').value);
+                formData.append('businessDescription', document.getElementById('business-description').value);
+                var avatarFile = document.getElementById('avatar-upload').files[0];
+                if (avatarFile) {
+                    formData.append('avatar', avatarFile);
+                }
+
+                fetch('/save_business_info', {
+                    method: 'POST',
+                    body: formData  // Send formData instead of JSON
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        nextStep(3);
+                    } else {
+                        console.error('Error:', data.message);
+                        // Handle error
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+
+
+
+
+            function saveGoalsAndPreferences() {
+                let goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent);
+                let preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent);
+
+                fetch('/save_goals_preferences', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ goals, preferences })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        nextStep(5);  // Assuming 5 is the next step
+                    } else {
+                        console.error('Error:', data.message);
+                        // Handle error
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+
+
+
+            function previewAvatar(event) {
+                const reader = new FileReader();
+                const file = event.target.files[0];
+                const preview = document.getElementById('avatar-preview-image');
+                const placeholder = document.getElementById('avatar-placeholder');
+                const uploadButton = document.querySelector('.upload-button');
+
+                if (file) {
+                    reader.readAsDataURL(file);
+                    reader.onloadend = function () {
+                        preview.src = reader.result;
+                        preview.classList.remove('hidden');
+                        placeholder.classList.add('hidden');
+                        uploadButton.textContent = 'Remove';
+                        uploadButton.onclick = removeAvatar;
+                    };
+                }
+            }
+
+            function removeAvatar() {
+                const uploadInput = document.getElementById('avatar-upload');
+                const preview = document.getElementById('avatar-preview-image');
+                const placeholder = document.getElementById('avatar-placeholder');
+                const uploadButton = document.querySelector('.upload-button');
+
+                uploadInput.value = '';
+                preview.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                uploadButton.textContent = 'Upload';
+                uploadButton.onclick = function() {
+                    document.getElementById('avatar-upload').click();
+                };
+            }
+
+
+
+            // This code should be run in the browser's console
+            function debugShowStep(stepNumber) {
+                // Hide all steps
+                document.querySelectorAll('.modal-step').forEach(step => {
+                    step.style.display = 'none';
+                });
+                // Hide the back button if on the first step
+                var backButton = document.getElementById('onboard-nav-button');
+                if (stepNumber === 1) {
+                    backButton.style.display = 'none';
+                } else {
+                    backButton.style.display = 'block'; // Show back button if not on the first step
+                }
+                // Show the current step
+                var currentStepElement = document.getElementById('step' + stepNumber);
+                if (currentStepElement) {
+                    currentStepElement.style.display = 'block';
+                } else {
+                    console.error('No element found for step', stepNumber);
+                }
+            }
+
+            // Call this function with different step numbers to see if it correctly shows/hides the back button
+            debugShowStep(1); // Should hide the back button
+            debugShowStep(2); // Should show the back button
+            debugShowStep(3); // Should show the back button
+
+
+
+            // Set the initial step
+            showStep(currentStep); // This will hide the back button on the first step
+
+            // Replace feather icons
+            feather.replace();
+    </script>
+</body>
+</html>

@@ -1,13 +1,16 @@
-from flask import Blueprint, session, redirect, url_for, request, flash
+from flask import Blueprint, session, redirect, url_for, request, flash, current_app
 import google_auth_oauthlib.flow
 from app.utils import credentials_to_dict, is_credentials_valid
 from app.config import CLIENT_SECRETS_FILE
 from google.oauth2 import credentials as google_credentials
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 from googleapiclient.discovery import build  # Import statement added
 import os
 
+from app.database import db  # Import the Firestore client
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
 
@@ -19,7 +22,7 @@ def authorize():
 
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
-        scopes=['https://www.googleapis.com/auth/analytics.readonly'])
+        scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'])
 
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
     authorization_url, state = flow.authorization_url(
@@ -34,13 +37,49 @@ def oauth2callback():
     state = session['state']
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE, 
-        scopes=['https://www.googleapis.com/auth/analytics.readonly'], 
+        scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'], 
         state=state)
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
     authorization_response = request.url
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
+
+    # Verify and decode the ID token
+    try:
+        id_info = google_id_token.verify_oauth2_token(credentials.id_token, requests.Request())
+        user_email = id_info['email']
+        session['user_email'] = user_email  # Store user email in session
+    except ValueError:
+        # Invalid token
+        flash('Invalid token. Please try again.')
+        return redirect(url_for('main.index'))
+
+    # Check if credentials is a valid object and has an id_token attribute
+    # if credentials and hasattr(credentials, 'id_token'):
+    #     # Get user's email from credentials
+    #     user_email = credentials.id_token['email']
+    #     # Rest of your code...
+    # else:
+    #     flash('Failed to fetch user credentials. Please try again.')
+    #     return redirect(url_for('main.index'))
+
+    # Get user's email from credentials
+    # user_email = credentials.id_token['email']
+
+    # Get a reference to the users collection in Firestore
+    users_ref = db.collection('users')
+
+    # Try to get a document in the users collection with the same ID as the user's email
+    doc = users_ref.document(user_email).get()
+
+    if not doc.exists:
+        users_ref.document(user_email).set({
+            'email': user_email  # You can add more placeholder keys if necessary
+        })
+        return redirect(url_for('main.onboarding'))
+
+
     analytics = build('analytics', 'v3', credentials=credentials)
 
     # Fetch UA properties
@@ -88,6 +127,11 @@ def oauth2callback():
     session['credentials'] = credentials_to_dict(credentials)
     session['properties'] = properties_list
     print("User has been authenticated successfully")
+
+    # Force session to update
+    session.modified = True
+    current_app.logger.info(f"Properties stored in session: {session['properties']}")
+
     return redirect(url_for('main.index'))
 
 
