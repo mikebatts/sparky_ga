@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
 </head>
 <body>
 
@@ -17,6 +19,7 @@
             <i data-feather="x"></i>
         </button>
     </div>
+
     <!-- Onboarding Modal -->
     <div id="onboardingModal" class="onboarding-modal">
 
@@ -32,7 +35,7 @@
 
 
          <!-- Welcome Step (Taken from old welcome.html) -->
-         <div class="modal-step" id="step1">
+        <div class="modal-step" id="step1">
             <div class="container-onboarding">
                 <div class="onboarding-body">
                     <h1>Welcome to Sparky.</h1>
@@ -55,34 +58,34 @@
         <div class="modal-step" id="step2" style="display:none;">
             <div class="container-onboarding">
                 <div class="onboarding-biz-body">
-                    <h1>Let's set up your business.</h1>
-                    <p>Tell us about your business so we can tailor Sparky's insights to your needs.</p>
+                  
+                    
                     <form id="business-info-form" enctype="multipart/form-data">
-                        <!-- Avatar Upload -->
-                        <div class="form-group">
-                            <p for="business-name">Photo</p>
-                            <div class="avatar-upload-group">
-                                <label for="avatar-upload" class="avatar-label">
-                                    <div class="avatar-preview">
-                                        <img id="avatar-preview-image" src="#" alt="Avatar Preview" class="hidden"/>
-                                        <div id="avatar-placeholder" class="avatar-placeholder"></div>
-                                    </div>
-                                </label>
-                                <button type="button" class="upload-button" onclick="document.getElementById('avatar-upload').click();">Upload</button>
-                                <input type="file" id="avatar-upload" name="avatar" class="hidden" onchange="previewAvatar(event)">
-                            </div>       
-                        </div>
+                        <div class="biz-info-wrapper"></div>
+                            <h1>Your business.</h1>
+                            <p class="biz-body-copy">Tell us about your business so we can tailor Sparky's insights to your needs.</p>
+                            <!-- Avatar Upload -->
+                            <div class="form-group avatar-upload-container">
+                                <p>Photo</p>
+                                <div class="avatar-upload-wrapper">
+                                    <div class="avatar-preview" id="avatar-placeholder"></div>
+                                    <button type="button" id="avatar-button" onclick="handleAvatarClick()">Upload</button>
+                                    <input type="file" id="avatar-upload" name="avatar" class="hidden" onchange="previewAvatar(event)">
+                                </div>
+                                
+                            </div>
 
-                        <!-- Business Name Input -->
-                        <div class="form-group">
-                            <p for="business-name">Name</p>
-                            <input type="text" id="business-name" name="business_name" placeholder="Enter your business name">
-                        </div>
+                            <!-- Business Name Input -->
+                            <div class="form-group">
+                                <p for="business-name">Name</p>
+                                <input type="text" id="business-name" name="business_name" placeholder="Enter your business name">
+                            </div>
 
-                        <!-- Business Description Input -->
-                        <div class="form-group">
-                            <p for="business-description">Description</p>
-                            <textarea id="business-description" name="business_description" placeholder="Describe your business"></textarea>
+                            <!-- Business Description Input -->
+                            <div class="form-group">
+                                <p for="business-description">Description</p>
+                                <textarea id="business-description" name="business_description" placeholder="Describe your business"></textarea>
+                            </div>
                         </div>
 
                         <div class="onboarding-CTA-container">
@@ -91,97 +94,95 @@
                     </form>
                 </div>
             </div>
-        </div>
+        
+        
 
         <!-- Goals Step -->
         <div class="modal-step" id="step3" style="display:none;">
-            <h2>Set your goals.</h2>
-            <p>Prioritize your business goals, ranking from most to least important. This lets Sparky deliver more relevant and customized reports.</p>
-            <ul id="goalsList" class="draggable-list">
-                <li draggable="true">More visitors</li>
-                <li draggable="true">Higher sales</li>
-                <li draggable="true">Increase engagement</li>
-                <li draggable="true">Improve conversion rate</li>
-                <li draggable="true">Improve SEO rankings</li>
-            </ul>
-            <button onclick="previousStep(2)">Back</button>
-            <button onclick="nextStep(4)">Next</button>
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Set your goals.</h1>
+                        <p>Prioritize your business goals, ranking from most to least important. This lets Sparky deliver more relevant and customized reports.</p>
+                        <ul id="goalsList" class="draggable-list">
+                            <li class="draggable-item" draggable="true"><span class="item-number">1</span> More visitors <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">2</span> Higher sales <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">3</span> Increase engagement <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">4</span> Improve conversion rate <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">5</span> Improve SEO rankings <i class="icon-right"></i></li>
+                        </ul>
+                    </div>
+                    <div class="onboarding-CTA-container">
+                        <button onclick="nextStep(4)">Next</button>
+                    </div>
+                </div>
+            </div>
         </div>
-
 
         <!-- Preferences Step -->
         <div class="modal-step" id="step4" style="display:none;">
-            <h2>Set your preferences.</h2>
-            <p>Rank the metrics you care about, we’ll keep you informed about data points that matter to you the most.</p>
-            <ul id="preferencesList" class="draggable-list">
-                <li draggable="true">Traffic sources</li>
-                <li draggable="true">Top selling products</li>
-                <li draggable="true">Customer value</li>
-                <li draggable="true">Cart abandonment</li>
-                <li draggable="true">Bounce rate</li>
-            </ul>
-            <button onclick="previousStep(3)">Back</button>
-            <button onclick="saveGoalsAndPreferences()">Next</button>
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Set your preferences.</h1>
+                        <p>Rank the metrics you care about, we’ll keep you informed about data points that matter to you the most.</p>
+                        <ul id="preferencesList" class="draggable-list">
+                            <li class="draggable-item" draggable="true"><span class="item-number">1</span> Traffic sources <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">2</span> Top selling products <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">3</span> Customer value <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">4</span> Card abandonment <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">5</span> Bounce rate <i class="icon-right"></i></li>
+                        </ul>
+                    </div>
+                    <div class="onboarding-CTA-container">
+                        <button onclick="saveGoalsAndPreferences()">Next</button>
+                    </div>
+                </div>
+            </div>
         </div>
-
 
         <!-- Confirmation Step -->
         <div class="modal-step" id="step5" style="display:none;">
-            <h2> You’re ready for your first report!</h2>
-            <p>You’ve successfully set up your profile, goals, and preferences. You may update these settings any time in the app.</p>
-            <!-- Content for Confirmation -->
-            <button onclick="previousStep(4)">Back</button>
-            <a href="{{ url_for('main.select_property') }}"><button>Get Started</button></a>
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>You’re ready for your first report!</h1>
+                        <p>You’ve successfully set up your profile, goals, and preferences. You may update these settings any time in the app.</p>
+                    </div>
+                    <div class="onboarding-CTA-container">
+                        <a href="{{ url_for('main.select_property') }}"><button>Get Started</button></a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const goalsList = document.getElementById('goalsList');
-            let draggedItem = null;
 
-            goalsList.addEventListener('dragstart', function(e) {
-                draggedItem = e.target;
-            });
-
-            goalsList.addEventListener('dragover', function(e) {
-                e.preventDefault();  // Necessary to allow dropping
-            });
-
-            goalsList.addEventListener('drop', function(e) {
-                e.preventDefault();
-                if (e.target.tagName === 'LI' && draggedItem !== e.target) {
-                    // Swap the positions of dragged item and drop target
-                    let temp = document.createElement('li');
-                    goalsList.insertBefore(temp, draggedItem);
-                    goalsList.insertBefore(draggedItem, e.target);
-                    goalsList.insertBefore(e.target, temp);
-                    goalsList.removeChild(temp);
+            new Sortable(document.getElementById('goalsList'), {
+                animation: 150,
+                ghostClass: "sortable-ghost",
+                onEnd: function(evt) {
+                    updateNumbers(evt.to);
                 }
             });
 
-            const preferencesList = document.getElementById('preferencesList');
-                let draggedPreferenceItem = null;
+            new Sortable(document.getElementById('preferencesList'), {
+                animation: 150,
+                ghostClass: "sortable-ghost",
+                onEnd: function(evt) {
+                    updateNumbers(evt.to);
+                }
+            });
 
-                preferencesList.addEventListener('dragstart', function(e) {
-                    draggedPreferenceItem = e.target;
+            function updateNumbers(list) {
+                Array.from(list.children).forEach((item, index) => {
+                    item.querySelector('.item-number').textContent = index + 1;
                 });
+            }
 
-                preferencesList.addEventListener('dragover', function(e) {
-                    e.preventDefault();  // Necessary to allow dropping
-                });
 
-                preferencesList.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    if (e.target.tagName === 'LI' && draggedPreferenceItem !== e.target) {
-                        // Swap the positions of dragged item and drop target
-                        let temp = document.createElement('li');
-                        preferencesList.insertBefore(temp, draggedPreferenceItem);
-                        preferencesList.insertBefore(draggedPreferenceItem, e.target);
-                        preferencesList.insertBefore(e.target, temp);
-                        preferencesList.removeChild(temp);
-                    }
-                });
             });
         
 
@@ -225,19 +226,19 @@
                 window.location.href = "{{ url_for('main.close_onboarding') }}";
             }
 
-            function nextStep(stepNumber) {
-                console.log("Moving to next step:", stepNumber);
-                // Hide all steps
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                // Show next step
-                var nextStepElement = document.getElementById('step' + stepNumber);
-                console.log("Next step element:", nextStepElement);
-                if (nextStepElement) {
-                    nextStepElement.style.display = 'block';
-                } else {
-                    console.error('No element found for step', stepNumber);
-                }
-            }
+            // function nextStep(stepNumber) {
+            //     console.log("Moving to next step:", stepNumber);
+            //     // Hide all steps
+            //     document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+            //     // Show next step
+            //     var nextStepElement = document.getElementById('step' + stepNumber);
+            //     console.log("Next step element:", nextStepElement);
+            //     if (nextStepElement) {
+            //         nextStepElement.style.display = 'block';
+            //     } else {
+            //         console.error('No element found for step', stepNumber);
+            //     }
+            // }
 
             function nextStep(stepNumber) {
                 console.log("Moving to next step:", stepNumber);
@@ -245,12 +246,7 @@
                 // Hide all steps
                 document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
                 // Show next step
-                var nextStepElement = document.getElementById('step' + currentStep);
-                if (nextStepElement) {
-                    nextStepElement.style.display = 'block';
-                } else {
-                    console.error('No element found for step', currentStep);
-                }
+                var stepElement = document.getElementById('step' + stepNumber);
                 showStep(currentStep); // Update the display based on the current step
             }
 
@@ -324,39 +320,41 @@
 
 
 
+            function handleAvatarClick() {
+                const avatarUpload = document.getElementById('avatar-upload');
+                if (avatarUpload.value) {
+                    removeAvatar();
+                } else {
+                    avatarUpload.click();
+                }
+            }
+
             function previewAvatar(event) {
                 const reader = new FileReader();
                 const file = event.target.files[0];
-                const preview = document.getElementById('avatar-preview-image');
-                const placeholder = document.getElementById('avatar-placeholder');
-                const uploadButton = document.querySelector('.upload-button');
+                const avatarPlaceholder = document.getElementById('avatar-placeholder');
+                const avatarButton = document.getElementById('avatar-button');
 
                 if (file) {
                     reader.readAsDataURL(file);
-                    reader.onloadend = function () {
-                        preview.src = reader.result;
-                        preview.classList.remove('hidden');
-                        placeholder.classList.add('hidden');
-                        uploadButton.textContent = 'Remove';
-                        uploadButton.onclick = removeAvatar;
+                    reader.onloadend = function() {
+                        avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
+                        avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
                     };
                 }
             }
 
             function removeAvatar() {
-                const uploadInput = document.getElementById('avatar-upload');
-                const preview = document.getElementById('avatar-preview-image');
-                const placeholder = document.getElementById('avatar-placeholder');
-                const uploadButton = document.querySelector('.upload-button');
+                const avatarPlaceholder = document.getElementById('avatar-placeholder');
+                const avatarButton = document.getElementById('avatar-button');
 
-                uploadInput.value = '';
-                preview.classList.add('hidden');
-                placeholder.classList.remove('hidden');
-                uploadButton.textContent = 'Upload';
-                uploadButton.onclick = function() {
-                    document.getElementById('avatar-upload').click();
-                };
+                document.getElementById('avatar-upload').value = '';
+                avatarPlaceholder.style.backgroundImage = '';
+                avatarButton.textContent = 'Upload'; // Change button text back to 'Upload'
             }
+
+
+
 
 
 
