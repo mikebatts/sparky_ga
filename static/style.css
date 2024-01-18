@@ -730,6 +730,11 @@ footer {
 
 /* Responsive styles for desktop */
 @media screen and (min-width: 768px) {
+    .ob-html {
+        display: flex;
+        justify-content: center;
+    }
+
     .body {
         background-color: #fff;
         color: #333;
@@ -738,6 +743,13 @@ footer {
         margin: 0;
         text-align: center;
         min-height: 100vh; /* Ensure it covers at least the entire viewport */
+    }
+
+    .ob-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
     }
     
     .container {
@@ -748,6 +760,33 @@ footer {
         padding: 16px;
         box-sizing: border-box;
         margin: 0 auto;
+    }
+
+    .onboarding-nav {
+        width: 800px;
+
+    }
+
+    .container-onboarding {
+        display: block;
+    }
+
+    .onboarding-modal {
+        height: 800px;
+        width: 800px;
+    }
+
+    .onboarding-CTA-container {
+        display: flex;
+        margin-top: 24px;
+    }
+
+    .draggable-list {
+        padding-top: 24px;
+    }
+
+    .onboarding-biz-body p {
+        font-weight: 500;
     }
 
     h1 {
@@ -768,6 +807,10 @@ footer {
     .navbar {
         padding: 8px 84px;
     }
+
+    .dropdown-button {
+        width: 42px;
+    }
     
 
     .prop-body {
@@ -784,7 +827,7 @@ footer {
     button, select, input[type="submit"] {
         /* padding: 24px; */
         font-size: 16px;
-        width: auto;
+        width: 240px;
     }
 
     /* Adjusting the font size for list items */

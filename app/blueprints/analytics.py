@@ -6,6 +6,8 @@ from app.config import openai_client
 from google.oauth2 import credentials as google_credentials
 import json, logging
 from datetime import datetime
+from app.database import db  # Import the Firestore client
+
 
 
 analytics = Blueprint('analytics', __name__, url_prefix='/analytics')
@@ -29,6 +31,19 @@ def fetch_data():
         if property_type == "GA4":
             numeric_property_id = property_id.split('/')[-1]
             client = BetaAnalyticsDataClient(credentials=credentials)
+
+            # Fetch user data from Firebase
+            user_email = session.get('user_email')
+            if not user_email:
+                flash("User not authenticated.", "error")
+                return redirect(url_for('auth.authorize'))
+
+            user_doc = db.collection('users').document(user_email).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+            else:
+                flash("User data not found.", "error")
+                return redirect(url_for('main.index'))
 
             # Define the dimensions and metrics for each batch
             # Batch 1: Traffic and Performance
@@ -170,30 +185,49 @@ def fetch_data():
             summarized_data = summarize_ga_data(combined_response_data)
 
             # Prepare a single prompt for all tasks in the specified format
+            business_name = user_data.get('businessName', 'Your Business')
+            business_description = user_data.get('businessDescription', '')
+            goals = ', '.join(user_data.get('goals', []))
+            preferences = ', '.join(user_data.get('preferences', []))
+
+            # Prepare the personalized context introduction
+            user_context = (
+                f"Business Name: {business_name}\n"
+                f"Description: {business_description}\n"
+                f"Goals: {goals}\n"
+                f"Preferences: {preferences}\n\n"
+            )
+
+
             prompt = (f"Analyze this summarized data: {summarized_data}\n\n"
             "### Summary:\n"
             "Provide a concise 3-4 sentence summary. Avoid using a list format.\n"
             "### Key Insights:\n"
-            "Generate 4 key insights. Each insight should include: a one-word title, a numeric data point or one word metric (only list the number or one word, dont do '1.39 sessions/user', do '1.39'. Dont do '0.94 seconds', do '0.94s'. We need this to be as short as possible), and one brief explanatory comment no more than 90 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
+            "Generate 4 key insights based on the data and user context (their ranked preferences). Each insight should include: a one-word title, a numeric data point or one word metric (only list the number or one word, dont do '1.39 sessions/user', do '1.39'. Dont do '0.94 seconds', do '0.94s'. We need this to be as short as possible), and one brief explanatory comment no more than 90 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
             "### Actionable Strategies:\n"
-            "Suggest 4 actionable strategies based on the data, 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- 📈 Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
+            "Suggest 4 actionable strategies based on the data and user context (ranked goals and preferences), 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- 📈 Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
+
+            # Combine the user context with the original prompt
+            combined_prompt = user_context + prompt
 
 
-            ## OpenAI API call with the new prompt
+            ## OpenAI API call with the new combined prompt
             response = openai_client.chat.completions.create(
                 model="gpt-4-1106-preview",
-                temperature=1,
+                temperature=0,
                 messages=[
-                    {"role": "system", "content": "You are a professional analytics assistant."},
-                    {"role": "user", "content": prompt}
+                    {"role": "system", "content": "You are a professional analytics assistant, your job is to take the user's context for their business and their connected analytics, and deliver a personlized report. Their key insights and actionable strategies should be influenced by their goals and preferences they have ranked 1-5, this is very important and crucial, and should be acknowledged in the report. Also, do not reiterate their name or business description, just use it for context in your report."},
+                    {"role": "user", "content": combined_prompt}
                 ],
                 max_tokens=300  # Adjust as needed
             )
 
             insights_text = response.choices[0].message.content
             session['insights'] = insights_text
+            print("OpenAI Response:", response.choices[0].message.content)
 
             return redirect(url_for('reports.show_report'))
+
 
     except Exception as e:
         logging.error(f"Error in fetch-data: {e}")
