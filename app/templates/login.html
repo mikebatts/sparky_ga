@@ -23,7 +23,7 @@
                     {% endfor %}
                 {% endif %}
             {% endwith %}
-            <a href="{{ url_for('auth.authorize') }}"><button>Sign in with Google</button></a>
+            <a href="{{ url_for('auth.authorize') }}"><button onclick="initiateLogin()">Sign in with Google</button></a>
             <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p>
         </div>
         
@@ -32,6 +32,10 @@
 
 <script>
     feather.replace();
+
+    function initiateLogin() {
+        sessionStorage.setItem('initiating_login', 'true');
+    }      
 </script>
   
 </html>

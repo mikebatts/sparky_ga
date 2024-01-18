@@ -19,6 +19,8 @@ auth = Blueprint('auth', __name__, url_prefix='/auth')
 def authorize():
     # Clear existing session data
     session.clear()
+    session['initiating_login'] = True  # Set the flag when the login process is initiated
+
 
     flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
@@ -44,6 +46,8 @@ def oauth2callback():
     flow.fetch_token(authorization_response=authorization_response)
 
     credentials = flow.credentials
+    session['credentials'] = credentials_to_dict(credentials)
+
 
     # Verify and decode the ID token
     try:
@@ -51,18 +55,25 @@ def oauth2callback():
         user_email = id_info['email']
         session['user_email'] = user_email  # Store user email in session
 
-        # Get a reference to the users collection in Firestore
-        user_doc = db.collection('users').document(user_email).get()
-        if user_doc.exists:
-            user_data = user_doc.to_dict()
-            session['user_avatar'] = user_data.get('avatar', url_for('static', filename='default-avatar.png'))  # default avatar if none is set
+        # Check if the login was initiated by the user
+        if session.pop('initiating_login', None):
+            # Get a reference to the users collection in Firestore
+            user_doc = db.collection('users').document(user_email).get()
+            if user_doc.exists:
+                # Returning user: Update session and redirect to property selection
+                session['logged_in'] = True
+                redirect_url = url_for('main.select_property')
+            else:
+                # New user: Redirect to onboarding
+                redirect_url = url_for('main.onboarding')
         else:
-            # Set up a new user or handle it as needed
-            pass
+            flash('Login not initiated by the user.')
+            redirect_url = url_for('auth.authorize')
     except ValueError:
         # Invalid token
         flash('Invalid token. Please try again.')
-        return redirect(url_for('main.index'))
+        redirect_url = url_for('auth.authorize')
+
 
     # Check if credentials is a valid object and has an id_token attribute
     # if credentials and hasattr(credentials, 'id_token'):
@@ -153,9 +164,13 @@ def oauth2callback():
 
 @auth.route('/logout')
 def logout():
-    # Clear session data
+    print("Logging out user:", session.get('user_email', 'Unknown'))
+    # Clear session data including the logged_in flag
     session.pop('credentials', None)
     session.pop('properties', None)
     session.pop('selected_property', None)
-    print("User has been logged out")
+    session.pop('logged_in', None)  # Clear the logged_in flag
+    print("User logged out")
     return redirect(url_for('main.index'))
+
+

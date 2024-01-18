@@ -150,7 +150,7 @@
                         <p>You’ve successfully set up your profile, goals, and preferences. You may update these settings any time in the app.</p>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <a href="{{ url_for('main.select_property') }}"><button>Get Started</button></a>
+                        <a href="{{ url_for('main.select_property') }}"><button onclick="completeOnboarding()">Get Started</button></a>
                     </div>
                 </div>
             </div>
@@ -222,9 +222,10 @@
 
 
             function closeOnboarding() {
-                // Redirect to a server route to handle closing
-                window.location.href = "{{ url_for('main.close_onboarding') }}";
+                window.location.href = "{{ url_for('main.index') }}";
             }
+
+
 
             // function nextStep(stepNumber) {
             //     console.log("Moving to next step:", stepNumber);
@@ -266,29 +267,59 @@
             }
 
 
-            function saveBusinessInfo() {
-                var formData = new FormData();
-                formData.append('businessName', document.getElementById('business-name').value);
-                formData.append('businessDescription', document.getElementById('business-description').value);
+            //Session storage
+            let onboardingData = {};
+
+            function storeBusinessInfo() {
+                onboardingData.businessName = document.getElementById('business-name').value;
+                onboardingData.businessDescription = document.getElementById('business-description').value;
+
                 var avatarFile = document.getElementById('avatar-upload').files[0];
                 if (avatarFile) {
-                    formData.append('avatar', avatarFile);
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        onboardingData.avatarBase64 = e.target.result;
+                    };
+                    reader.readAsDataURL(avatarFile);
                 }
+            }
 
-                fetch('/save_business_info', {
+            function storeGoalsAndPreferences() {
+                onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent);
+                onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent);
+            }
+                               
+            function completeOnboarding() {
+                // Store business info and goals & preferences before sending data
+                storeBusinessInfo();
+                storeGoalsAndPreferences();
+
+                fetch('/complete_onboarding', {
                     method: 'POST',
-                    body: formData  // Send formData instead of JSON
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(onboardingData)
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        nextStep(3);
+                        window.location.href = "{{ url_for('main.index') }}"; // Redirect to index which will handle where to go next
                     } else {
                         console.error('Error:', data.message);
-                        // Handle error
                     }
-                })
-                .catch(error => console.error('Error:', error));
+                });
+            }
+
+
+
+
+
+
+
+            function saveBusinessInfo() {
+                currentStep = 3; // Set this to the number of the next step
+                showStep(currentStep);
             }
 
 
@@ -296,26 +327,8 @@
 
 
             function saveGoalsAndPreferences() {
-                let goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent);
-                let preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent);
-
-                fetch('/save_goals_preferences', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ goals, preferences })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        nextStep(5);  // Assuming 5 is the next step
-                    } else {
-                        console.error('Error:', data.message);
-                        // Handle error
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+                currentStep = 5; // Set this to the number of the next step
+                showStep(currentStep);
             }
 
 

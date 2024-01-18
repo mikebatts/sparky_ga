@@ -17,33 +17,43 @@
             {% endif %}
         </button>
         <div class="dropdown-content" id="navbarDropdown">
-            <a href="{{ url_for('main.reset_and_fetch') }}">Go Fetch</a>
-            <a target="_blank" href="https://www.usesparky.com/">About Sparky</a>
-            <a href="#">Privacy & Legal</a>
-            <a href="#">Contact</a>
+            <!-- User Avatar and Name (if available) -->
+            {% if session.get('user_avatar') %}
+            <div class="dropdown-header">
+                <img src="{{ session['user_avatar'] }}" alt="User Avatar" class="user-avatar">
+                <span>{{ session.get('user_name', 'User') }}</span>
+            </div>
+            {% endif %}
+        
+            <!-- Dropdown links -->
+            <a href="{{ url_for('main.edit_profile') }}">Edit Profile</a>
+            <a href="{{ url_for('main.account') }}">Account</a>
             <a href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>
     </div>
 </nav>
 
 <script>
-    feather.replace();
-
     document.addEventListener('DOMContentLoaded', function() {
         const dropdownButton = document.getElementById('dropdownButton');
         const navbarDropdown = document.getElementById('navbarDropdown');
 
-        dropdownButton.addEventListener('click', function() {
+        dropdownButton.addEventListener('click', function(event) {
+            event.stopPropagation(); // Prevent the event from bubbling up
             navbarDropdown.style.display = navbarDropdown.style.display === 'block' ? 'none' : 'block';
         });
 
         // Close the dropdown if clicked outside of it
         document.addEventListener('click', function(event) {
-            if (!dropdownButton.contains(event.target) && !navbarDropdown.contains(event.target)) {
+            if (!navbarDropdown.contains(event.target)) {
                 navbarDropdown.style.display = 'none';
             }
         });
     });
+
+    // Ensure feather icons are replaced after the DOM is fully loaded
+    feather.replace();
+
 
 
 </script>
