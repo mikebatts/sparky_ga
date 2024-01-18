@@ -10,7 +10,11 @@
     <div class="navbar-menu">
         <div class="navbar-menu">
         <button class="dropdown-button" id="dropdownButton">
-            <i data-feather="menu"></i>
+            {% if session.get('user_avatar') %}
+                <img src="{{ session['user_avatar'] }}" alt="User Avatar" class="user-avatar">
+            {% else %}
+                <i data-feather="menu"></i>
+            {% endif %}
         </button>
         <div class="dropdown-content" id="navbarDropdown">
             <a href="{{ url_for('main.reset_and_fetch') }}">Go Fetch</a>

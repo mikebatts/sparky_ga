@@ -12,9 +12,11 @@ from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 import logging
 
 
+logging.basicConfig(level=logging.INFO)
+
+
 main = Blueprint('main', __name__, url_prefix='/')
 
-logging.basicConfig(level=logging.INFO)
 
 
 @main.route('/')
@@ -82,38 +84,52 @@ def close_onboarding():
 
 @main.route('/save_business_info', methods=['POST'])
 def save_business_info():
-    business_name = request.form.get('businessName')
-    business_description = request.form.get('businessDescription')
+    try:
+        business_name = request.form.get('businessName')
+        business_description = request.form.get('businessDescription')
 
-    # Retrieve user's email from the session
-    user_email = session.get('user_email')
-    if not user_email:
-        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+        # Retrieve user's email from the session
+        user_email = session.get('user_email')
+        if not user_email:
+            return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-    # Get a reference to the users collection in Firestore
-    users_ref = db.collection('users')
-    users_data = {
-        'businessName': business_name,
-        'businessDescription': business_description
-    }
+        # Get a reference to the users collection in Firestore
+        users_ref = db.collection('users')
+        users_data = {
+            'businessName': business_name,
+            'businessDescription': business_description
+        }
 
-    # Handle the image upload
-    if 'avatar' in request.files:
-        image = request.files['avatar']
-        if image.filename != '':
-            filename = secure_filename(image.filename)
-            bucket = storage.bucket('sparky-408720.appspot.com')  # Replace with your actual bucket name
-            blob = bucket.blob(f"avatars/{filename}")
-            blob.upload_from_file(image)
-            image_url = blob.public_url
-            users_data['avatar'] = image_url
+        # Handle the image upload
+        if 'avatar' in request.files:
+            image = request.files['avatar']
+            if image.filename != '':
+                filename = secure_filename(image.filename)
+                bucket = storage.bucket('sparky-408720.appspot.com')  # Replace with your actual bucket name
+                blob = bucket.blob(f"avatars/{filename}")
 
-    users_ref.document(user_email).set(users_data, merge=True)
+                logging.info(f"Uploading file to Firebase Storage: {filename}")
+                blob.upload_from_file(image)
+                image_url = blob.public_url
 
-    # Logging for debugging
-    current_app.logger.info(f"Received business info for {user_email}: {users_data}")
+                blob.make_public()  # This line makes the file public
+                logging.info(f"File made public: {blob.public_url}")
 
-    return jsonify({'status': 'success'})
+                users_data['avatar'] = image_url
+            else:
+                logging.warning("Avatar file name is empty.")
+
+        users_ref.document(user_email).set(users_data, merge=True)
+        logging.info(f"Business info updated for user: {user_email}")
+
+
+        # Logging for debugging
+        current_app.logger.info(f"Received business info for {user_email}: {users_data}")
+
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logging.error(f"Error in save_business_info: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
 @main.route('/save_goals_preferences', methods=['POST'])

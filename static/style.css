@@ -27,7 +27,7 @@
 }
 
 .navbar-logo img {
-    height: 32px; /* Adjust as needed */
+    height: 40px; /* Adjust as needed */
 }
 
 .navbar-menu {
@@ -61,6 +61,14 @@
     cursor: pointer;
     font-size: 24px;
 }
+
+.user-avatar {
+    border-radius: 50%; /* Circular avatar */
+    height: 40px; /* Adjust size as needed */
+    width: 40px;
+    object-fit: cover; /* Ensures the image covers the area well */
+}
+
 
 .dropdown-content {
     display: none;

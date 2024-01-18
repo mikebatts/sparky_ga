@@ -50,6 +50,15 @@ def oauth2callback():
         id_info = google_id_token.verify_oauth2_token(credentials.id_token, requests.Request())
         user_email = id_info['email']
         session['user_email'] = user_email  # Store user email in session
+
+        # Get a reference to the users collection in Firestore
+        user_doc = db.collection('users').document(user_email).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            session['user_avatar'] = user_data.get('avatar', url_for('static', filename='default-avatar.png'))  # default avatar if none is set
+        else:
+            # Set up a new user or handle it as needed
+            pass
     except ValueError:
         # Invalid token
         flash('Invalid token. Please try again.')
@@ -72,6 +81,13 @@ def oauth2callback():
 
     # Try to get a document in the users collection with the same ID as the user's email
     doc = users_ref.document(user_email).get()
+
+     # After successfully fetching user email and other details
+    user_email = session['user_email']
+    user_doc = db.collection('users').document(user_email).get()
+    if user_doc.exists:
+        user_data = user_doc.to_dict()
+        session['user_avatar'] = user_data.get('avatar', url_for('static', filename='default-avatar.png'))  # default avatar if none is set
 
     if not doc.exists:
         users_ref.document(user_email).set({
