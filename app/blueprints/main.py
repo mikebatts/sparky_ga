@@ -210,6 +210,8 @@ def complete_onboarding():
             data['avatarURL'] = blob.public_url  # Storing the URL of the uploaded image
 
         users_ref.document(user_email).set(data, merge=True)
+        users_ref.document(user_email).update({'onboarding_completed': True})
+
 
         # Check if credentials are available in the session and convert them
         if 'credentials' in session and session['credentials']:
@@ -224,6 +226,15 @@ def complete_onboarding():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
+@main.route('/abandon_onboarding')
+def abandon_onboarding():
+    user_email = session.get('user_email')
+    if user_email:
+        user_doc = db.collection('users').document(user_email).get()
+        if user_doc.exists and not user_doc.to_dict().get('onboarding_completed', False):
+            db.collection('users').document(user_email).delete()
+            flash('Onboarding not completed. User record deleted.', 'info')
+    return redirect(url_for('auth.logout'))
 
 
 

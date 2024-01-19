@@ -222,8 +222,12 @@
 
 
             function closeOnboarding() {
-                window.location.href = "{{ url_for('main.index') }}";
+                fetch('/abandon_onboarding')
+                .then(() => {
+                    window.location.href = "{{ url_for('main.index') }}";
+                });
             }
+
 
 
 
