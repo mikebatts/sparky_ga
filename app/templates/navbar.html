@@ -3,15 +3,18 @@
 
 <nav class="navbar">
     <div class="navbar-logo">
-        <a href="{{ url_for('main.index') }}">
+        <a href="{{ url_for('main.select_property') }}">
             <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Sparky Logo">
         </a>
     </div>
+    
     <div class="navbar-menu">
         <div class="navbar-menu">
         <button class="dropdown-button" id="dropdownButton">
             {% if session.get('user_avatar') %}
                 <img src="{{ session['user_avatar'] }}" alt="User Avatar" class="user-avatar">
+                <!-- <span>{{ session.get('user_business_name', 'Your Business') }}</span> -->
+
             {% else %}
                 <i data-feather="menu"></i>
             {% endif %}
@@ -21,12 +24,11 @@
             {% if session.get('user_avatar') %}
             <div class="dropdown-header">
                 <img src="{{ session['user_avatar'] }}" alt="User Avatar" class="user-avatar">
-                <span>{{ session.get('user_name', 'User') }}</span>
+                <span>{{ session.get('user_business_name') }}</span>
             </div>
             {% endif %}
         
             <!-- Dropdown links -->
-            <a href="{{ url_for('main.edit_profile') }}">Edit Profile</a>
             <a href="{{ url_for('main.account') }}">Account</a>
             <a href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>

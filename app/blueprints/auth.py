@@ -47,8 +47,6 @@ def oauth2callback():
     credentials = flow.credentials
     session['credentials'] = credentials_to_dict(credentials)
 
-    redirect_url = url_for('auth.authorize')  # Default redirect
-
     try:
         id_info = google_id_token.verify_oauth2_token(credentials.id_token, requests.Request())
         user_email = id_info['email']
@@ -59,6 +57,9 @@ def oauth2callback():
 
         if session.pop('initiating_login', None):
             if user_doc.exists:
+                user_data = user_doc.to_dict()
+                session['user_avatar'] = user_data.get('avatar', '')  # Store avatar URL in session
+                session['user_business_name'] = user_data.get('businessName', 'Your Business')  # Store business name in session
                 redirect_url = url_for('main.select_property')
             else:
                 users_ref.document(user_email).set({
@@ -68,9 +69,13 @@ def oauth2callback():
                 redirect_url = url_for('main.onboarding')
         else:
             flash('Login not initiated by the user.')
+            redirect_url = url_for('auth.authorize')
 
     except ValueError:
         flash('Invalid token. Please try again.')
+        redirect_url = url_for('auth.authorize')
+
+
 
     # Fetch properties regardless of new or returning user
     try:

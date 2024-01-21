@@ -93,10 +93,10 @@ def select_property():
     return render_template('select_property.html', properties=properties_list)
 
 
-@main.route('/edit_profile')
-def edit_profile():
-    # Ensure the user is logged in and fetch the necessary data
-    return render_template('edit_profile.html')
+# @main.route('/edit_profile')
+# def edit_profile():
+#     # Ensure the user is logged in and fetch the necessary data
+#     return render_template('edit_profile.html')
 
 
 
@@ -135,6 +135,7 @@ def upload_avatar():
             if user_email:
                 users_ref = db.collection('users')
                 users_ref.document(user_email).update({'avatar': avatar_url})
+                session['user_avatar'] = avatar_url
 
             return jsonify({'status': 'success', 'avatarURL': avatar_url})
         else:

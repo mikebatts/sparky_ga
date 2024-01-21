@@ -316,10 +316,11 @@
                     reader.onloadend = function() {
                         avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
                         avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
-                        uploadAvatar(); // Add this line to call uploadAvatar
+                        uploadAvatar(); // Call uploadAvatar here to handle file upload
                     };
                 }
             }
+
 
 
 
