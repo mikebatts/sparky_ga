@@ -93,11 +93,55 @@ def select_property():
     return render_template('select_property.html', properties=properties_list)
 
 
-# @main.route('/edit_profile')
-# def edit_profile():
-#     # Ensure the user is logged in and fetch the necessary data
-#     return render_template('edit_profile.html')
+@main.route('/edit_profile')
+def edit_profile():
+    user_email = session.get('user_email')
+    if not user_email:
+        return redirect(url_for('auth.login'))
+    user_doc = db.collection('users').document(user_email).get()
+    if user_doc.exists:
+        user_data = user_doc.to_dict()
+        # Make sure user_data contains 'avatar', 'businessName', 'businessDescription', 'goals', 'preferences'
+        return render_template('edit_profile.html', user_data=user_data)
+    else:
+        flash("User data not found.", "error")
+        return redirect(url_for('main.index'))
 
+
+
+@main.route('/update_profile', methods=['POST'])
+def update_profile():
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+    data = request.get_json()
+    users_ref = db.collection('users')
+    users_ref.document(user_email).update({
+        'businessName': data['businessName'],
+        'businessDescription': data['businessDescription'],
+        'avatar': data['avatar']
+    })
+
+    return jsonify({'status': 'success'})
+
+@main.route('/update_complete_profile', methods=['POST'])
+def update_complete_profile():
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+    data = request.get_json()
+    users_ref = db.collection('users')
+    users_ref.document(user_email).update({
+        'businessName': data.get('businessName'),
+        'businessDescription': data.get('businessDescription'),
+        'avatar': data.get('avatar'),
+        'goals': data.get('goals'),
+        'preferences': data.get('preferences')
+    })
+
+    return jsonify({'status': 'success'})
 
 
 

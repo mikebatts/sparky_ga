@@ -29,6 +29,7 @@
             {% endif %}
         
             <!-- Dropdown links -->
+            <a href="{{ url_for('main.edit_profile') }}">Edit Profile</a>  <!-- Add this line -->
             <a href="{{ url_for('main.account') }}">Account</a>
             <a href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>

@@ -201,6 +201,20 @@
     padding: 16px;
 }
 
+.edit-modal {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 92px); /* Subtract the height of the onboarding-nav */
+}
+
+
+.container-edit {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Keep this to space out the content and CTA */
+    height: 100%;
+    padding: 16px;
+}
 
 .onboarding-body, .onboarding-biz-body {
     margin-bottom: auto; /* Pushes CTA to the bottom */
@@ -256,6 +270,13 @@
    
 }
 
+.edit-CTA-container {
+    margin-top: auto; /* Pushes it to the bottom */
+    margin-bottom: 16px; /* Add some space at the bottom */
+    padding: 0 16px;
+   
+}
+
 .modal-step {
     display: flex;
     flex-direction: column;
@@ -271,7 +292,7 @@
 
 /* Business Info Step Styles */
 .form-group {
-    margin-bottom: 20px; /* Space between form elements */
+    /* margin-bottom: 20px;  */
     width: 100%;
     /* width: 100%; */
 }

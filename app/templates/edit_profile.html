@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html class="ob-html">
+<head>
+    <title>Edit Profile | Sparky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+</head>
+<body class="ob-body">
+
+    <!-- Navigation Bar -->
+    <div class="onboarding-nav">
+        <button onclick="goToPreviousStep()" class="onboard-nav-button" id="onboard-nav-button">
+            <i data-feather="chevron-left"></i>
+        </button>
+        <button onclick="returnToDashboard()" class="onboard-nav-button" id="closeButton">
+            <i data-feather="x"></i>
+        </button>
+    </div>
+
+    <!-- Profile Editing Modal -->
+    <div id="editProfileModal" class="edit-modal">
+
+        <!-- Business Info Step -->
+        <div class="modal-step" id="step1">
+            <div class="container-edit">
+                <div class="onboarding-biz-body">
+                    <form id="business-info-form" enctype="multipart/form-data">
+                        <div class="biz-info-wrapper"></div>
+                            <h1>Your business.</h1>
+                            <p class="biz-body-copy">Update your details, goals, and preferences for your tailored reports.</p>
+                            <!-- Avatar Upload -->
+                            <div class="form-group avatar-upload-container">
+                                <p>Photo</p>
+                                <div class="avatar-upload-wrapper">
+                                    <div class="avatar-preview" id="avatar-placeholder" 
+                                    style="background-image: url('{{ user_data.avatar if user_data.avatar else '' }}');">
+                                    </div>
+                                    <button type="button" id="avatar-button" onclick="handleAvatarClick()">Upload</button>
+                                    <input type="file" id="avatar-upload" name="avatar" class="hidden" onchange="previewAvatar(event)">
+                                </div>
+                                </div>
+                                
+                            </div>
+
+                            <!-- Business Name Input -->
+                            <div class="form-group">
+                                <p for="business-name">Name</p>
+                                <input type="text" id="business-name" name="business_name" value="{{ user_data['businessName'] if user_data['businessName'] else '' }}" placeholder="Enter your business name">
+                            </div>
+
+                            <!-- Business Description Input -->
+                            <div class="form-group">
+                                <p for="business-description">Description</p>
+                                <textarea id="business-description" name="business_description">{{ user_data['businessDescription'] if user_data['businessDescription'] else '' }}</textarea>
+                            </div>
+                        </div>
+
+                        <div class="edit-CTA-container">
+                            <button type="button" onclick="saveBusinessInfo()">Next</button>
+                        </div>
+                    </form>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- Goals Step -->
+        <div class="modal-step" id="step2" style="display:none;">
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Set your goals.</h1>
+                        <p>Prioritize your business goals, ranking from most to least important. This lets Sparky deliver more relevant and customized reports.</p>
+                        <ul id="goalsList" class="draggable-list">
+                            <li class="draggable-item" draggable="true"><span class="item-number">1</span> More visitors <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">2</span> Higher sales <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">3</span> Increase engagement <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">4</span> Improve conversion rate <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">5</span> Improve SEO rankings <i class="icon-right"></i></li>
+                        </ul>
+                    </div>
+                    <div class="edit-CTA-container">
+                        <button onclick="nextStep(4)">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences Step -->
+        <div class="modal-step" id="step3" style="display:none;">
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Set your preferences.</h1>
+                        <p>Rank the metrics you care about, we’ll keep you informed about data points that matter to you the most.</p>
+                        <ul id="preferencesList" class="draggable-list">
+                            <li class="draggable-item" draggable="true"><span class="item-number">1</span> Traffic sources <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">2</span> Top selling products <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">3</span> Customer value <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">4</span> Card abandonment <i class="icon-right"></i></li>
+                            <li class="draggable-item" draggable="true"><span class="item-number">5</span> Bounce rate <i class="icon-right"></i></li>
+                        </ul>
+                    </div>
+                    <div class="edit-CTA-container">
+                        <button onclick="saveGoalsAndPreferences()">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Confirmation Step -->
+        <div class="modal-step" id="step4" style="display:none;">
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Profile Updated!</h1>
+                        <p>Your profile, goals, and preferences have been updated successfully.</p>
+                    </div>
+                    <div class="onboarding-CTA-container">
+                        <a href="{{ url_for('main.select_property') }}">
+                            <button onclick="completeProfileUpdate()">Save Profile</button>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize onboarding data
+        let onboardingData = {
+            businessName: '{{ user_data.businessName }}',
+            businessDescription: '{{ user_data.businessDescription }}',
+            avatar: '{{ user_data.avatar }}',
+            goals: {{ user_data.goals | tojson }},
+            preferences: {{ user_data.preferences | tojson }}
+        };
+    
+        // Set the current step
+        let currentStep = 1;
+    
+        // Function to handle the "Previous Step" navigation
+        function goToPreviousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            } else {
+                // If on the first step and the user tries to go back, redirect to the select_property page
+                window.location.href = "{{ url_for('main.select_property') }}";
+            }
+        }
+
+    
+    
+        // Other functions (previewAvatar, uploadAvatar, etc.) go here
+    
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("DOM fully loaded and parsed");
+            feather.replace();
+            let currentStep = 1;
+            populateFields();
+            setupSortableLists();
+            showStep(currentStep);
+        });
+
+        // Modify showStep for debugging
+        function showStep(stepNumber) {
+            console.log("Showing step:", stepNumber);
+            document.querySelectorAll('.modal-step').forEach(step => {
+                step.style.display = 'none';
+            });
+
+            var backButton = document.getElementById('onboard-nav-button');
+            backButton.style.display = stepNumber === 1 ? 'none' : 'block';
+
+            var currentStepElement = document.getElementById('step' + stepNumber);
+            if (currentStepElement) {
+                currentStepElement.style.display = 'flex';
+            } else {
+                console.error('No element found for step', stepNumber);
+            }
+        }
+    
+        // Function to populate form fields with existing data
+        function populateFields() {
+            document.getElementById('business-name').value = onboardingData.businessName;
+            document.getElementById('business-description').value = onboardingData.businessDescription;
+            if (onboardingData.avatar) {
+                document.getElementById('avatar-placeholder').style.backgroundImage = `url(${onboardingData.avatar})`;
+            }
+        }
+    
+        // Setup sortable lists for goals and preferences
+        function setupSortableLists() {
+            new Sortable(document.getElementById('goalsList'), {
+                animation: 150,
+                ghostClass: "sortable-ghost",
+                onEnd: function(evt) {
+                    updateNumbers(evt.to);
+                }
+            });
+    
+            new Sortable(document.getElementById('preferencesList'), {
+                animation: 150,
+                ghostClass: "sortable-ghost",
+                onEnd: function(evt) {
+                    updateNumbers(evt.to);
+                }
+            });
+        }
+    
+        // Update numbers in goals and preferences lists
+        function updateNumbers(list) {
+            Array.from(list.children).forEach((item, index) => {
+                item.querySelector('.item-number').textContent = index + 1;
+            });
+        }
+    
+        // Function for moving to the next step
+        function nextStep(stepNumber) {
+            currentStep = stepNumber; // Update the current step
+            showStep(currentStep); // Update the display based on the current step
+        }
+    
+        // Other functions...
+        // Function to handle avatar upload click
+        function handleAvatarClick() {
+            const avatarUpload = document.getElementById('avatar-upload');
+            if (avatarUpload.value) {
+                removeAvatar();
+            } else {
+                avatarUpload.click();
+            }
+        }
+
+        // Function to preview the avatar before uploading
+        function previewAvatar(event) {
+            const reader = new FileReader();
+            const file = event.target.files[0];
+            const avatarPlaceholder = document.getElementById('avatar-placeholder');
+            const avatarButton = document.getElementById('avatar-button');
+
+            if (file) {
+                reader.readAsDataURL(file);
+                reader.onloadend = function() {
+                    avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
+                    avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
+                    uploadAvatar(); // Call uploadAvatar here to handle file upload
+                };
+            }
+        }
+
+        // Function to upload avatar
+        function uploadAvatar() {
+            const avatarFile = document.getElementById('avatar-upload').files[0];
+
+            if (avatarFile) {
+                let formData = new FormData();
+                formData.append('avatar', avatarFile);
+
+                fetch('/upload_avatar', {
+                    method: 'POST',
+                    body: formData
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        onboardingData.avatar = data.avatarURL; // Store the avatar URL
+                    } else {
+                        console.error('Error uploading avatar:', data.message);
+                    }
+                }).catch(error => {
+                    console.error('Error in uploadAvatar:', error);
+                });
+            }
+        }
+
+        // Function to remove avatar
+        function removeAvatar() {
+            const avatarPlaceholder = document.getElementById('avatar-placeholder');
+            const avatarButton = document.getElementById('avatar-button');
+
+            document.getElementById('avatar-upload').value = '';
+            avatarPlaceholder.style.backgroundImage = '';
+            avatarButton.textContent = 'Upload'; // Change button text back to 'Upload'
+        }
+
+        // Function to save business information
+        function saveBusinessInfo() {
+            onboardingData.businessName = document.getElementById('business-name').value;
+            onboardingData.businessDescription = document.getElementById('business-description').value;
+
+            fetch('/save_business_info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    businessName: onboardingData.businessName,
+                    businessDescription: onboardingData.businessDescription
+                })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    currentStep = 3; // Set this to the number of the next step
+                    showStep(currentStep);
+                } else {
+                    console.error('Error saving business info:', data.message);
+                }
+            }).catch(error => {
+                console.error('Error saving business info:', error);
+            });
+        }
+
+        // Function to save goals and preferences
+        function saveGoalsAndPreferences() {
+            onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent.trim());
+            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent.trim());
+            currentStep = 5; // Set this to the number of the next step
+            showStep(currentStep);
+        }
+
+        // Function to complete onboarding process
+        function completeProfileUpdate() {
+            storeBusinessInfo();
+            storeGoalsAndPreferences();
+
+            fetch('/update_complete_profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(onboardingData)
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = "{{ url_for('main.select_property') }}"; // Change to select_property
+                } else {
+                    console.error('Error completing profile update:', data.message);
+                }
+            }).catch(error => {
+                console.error('Error during profile update:', error);
+            });
+        }
+
+
+        // Store business information before sending data
+        function storeBusinessInfo() {
+            onboardingData.businessName = document.getElementById('business-name').value;
+            onboardingData.businessDescription = document.getElementById('business-description').value;
+            // Include other business-related fields as needed
+        }
+
+        // Store goals and preferences before sending data
+        function storeGoalsAndPreferences() {
+            onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent.trim());
+            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent.trim());
+            // Include other goal-related fields as needed
+        }
+
+        function returnToDashboard() {
+            window.location.href = "{{ url_for('main.select_property') }}"; // Redirect to the select_property route
+        }
+
+
+    
+    </script>
+    
+
+       
+</body>
+</html>
