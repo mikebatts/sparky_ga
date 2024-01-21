@@ -5,9 +5,11 @@ from werkzeug.utils import secure_filename
 from google.oauth2 import credentials as google_credentials
 from app.utils import is_credentials_valid
 from app.database import db  # Make sure this is correctly imported
-from firebase_admin import storage  # Import Firebase storage
+import firebase_admin
+from firebase_admin import storage 
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
+import os
 
 import base64
 import io
@@ -17,6 +19,7 @@ import logging
 
 
 logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 
 # Utility function to convert credentials to a dictionary
@@ -106,6 +109,68 @@ def onboarding():
     return render_template('onboarding.html', is_new_user=is_new_user)
 
 
+@main.route('/upload_avatar', methods=['POST'])
+def upload_avatar():
+    try:
+        avatar_file = request.files['avatar']
+        if avatar_file:
+            filename = secure_filename(avatar_file.filename)
+            print(f"Received file: {filename}")  # Debugging
+
+            # Ensure bucket name is specified correctly
+            bucket_name = os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
+            print(f"Bucket name: {bucket_name}")  # Debugging
+
+            bucket = storage.bucket(bucket_name, app=firebase_admin.get_app())
+            blob = bucket.blob(f'avatars/{filename}')
+
+            blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
+            blob.make_public()
+            avatar_url = blob.public_url
+
+            print(f"Avatar URL: {avatar_url}")  # Debugging
+
+            # Update Firestore user document with the avatar URL
+            user_email = session.get('user_email')
+            if user_email:
+                users_ref = db.collection('users')
+                users_ref.document(user_email).update({'avatar': avatar_url})
+
+            return jsonify({'status': 'success', 'avatarURL': avatar_url})
+        else:
+            print("No avatar file provided")  # Debugging
+            return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+    except Exception as e:
+        print(f"Error in upload_avatar: {e}")  # Debugging
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+    
+
+@main.route('/save_business_info', methods=['POST'])
+def save_business_info():
+    try:
+        data = request.get_json()
+        user_email = session.get('user_email')
+        if not user_email:
+            return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+        # Save business info to Firestore
+        users_ref = db.collection('users')
+        users_ref.document(user_email).update({
+            'businessName': data['businessName'],
+            'businessDescription': data['businessDescription']
+        })
+
+        print(f"Business info saved for {user_email}")
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        print(f"Error saving business info: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+
+
 
 
 @main.route('/close_onboarding')
@@ -116,104 +181,24 @@ def close_onboarding():
 
 
 
-# @main.route('/save_business_info', methods=['POST'])
-# def save_business_info():
-#     try:
-#         business_name = request.form.get('businessName')
-#         business_description = request.form.get('businessDescription')
-
-#         # Retrieve user's email from the session
-#         user_email = session.get('user_email')
-#         if not user_email:
-#             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-
-#         # Get a reference to the users collection in Firestore
-#         users_ref = db.collection('users')
-#         users_data = {
-#             'businessName': business_name,
-#             'businessDescription': business_description
-#         }
-
-#         # Handle the image upload
-#         if 'avatar' in request.files:
-#             image = request.files['avatar']
-#             if image.filename != '':
-#                 filename = secure_filename(image.filename)
-#                 bucket = storage.bucket('sparky-408720.appspot.com')  # Replace with your actual bucket name
-#                 blob = bucket.blob(f"avatars/{filename}")
-
-#                 logging.info(f"Uploading file to Firebase Storage: {filename}")
-#                 blob.upload_from_file(image)
-#                 image_url = blob.public_url
-
-#                 blob.make_public()  # This line makes the file public
-#                 logging.info(f"File made public: {blob.public_url}")
-
-#                 users_data['avatar'] = image_url
-#             else:
-#                 logging.warning("Avatar file name is empty.")
-
-#         users_ref.document(user_email).set(users_data, merge=True)
-#         logging.info(f"Business info updated for user: {user_email}")
-
-
-#         # Logging for debugging
-#         current_app.logger.info(f"Received business info for {user_email}: {users_data}")
-
-#         return jsonify({'status': 'success'})
-#     except Exception as e:
-#         logging.error(f"Error in save_business_info: {e}")
-#         return jsonify({'status': 'error', 'message': str(e)}), 500
-
-
-# @main.route('/save_goals_preferences', methods=['POST'])
-# def save_goals_preferences():
-#     data = request.get_json()
-#     goals = data.get('goals')
-#     preferences = data.get('preferences')
-
-#     user_email = session.get('user_email')
-#     if not user_email:
-#         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-
-#     users_ref = db.collection('users')
-#     users_ref.document(user_email).set({
-#         'goals': goals,
-#         'preferences': preferences
-#     }, merge=True)
-
-#     current_app.logger.info(f"Saved goals and preferences for {user_email}")
-
-#     return jsonify({'status': 'success'})
-
-
 
 @main.route('/complete_onboarding', methods=['POST'])
 def complete_onboarding():
     try:
         data = request.get_json()
+        print(f"Received onboarding data: {data}")  # Print statement for debugging
+
         user_email = session.get('user_email')
         if not user_email:
             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
+        # Reference to the users collection in Firestore
         users_ref = db.collection('users')
 
-        # Process avatar if it exists in the data
-        if 'avatarBase64' in data:
-            avatar_data = data.pop('avatarBase64')
-            avatar_image = base64.b64decode(avatar_data.split(',')[1])
-            image = Image.open(io.BytesIO(avatar_image))
-            filename = f"{user_email}_avatar.png"
-            blob = storage.bucket('your-firebase-bucket').blob(f'avatars/{filename}')
-            blob.upload_from_string(image.tobytes(), content_type='image/png')
-            blob.make_public()
-            data['avatarURL'] = blob.public_url  # Storing the URL of the uploaded image
-
+        # Update the user document in Firestore
         users_ref.document(user_email).set(data, merge=True)
         users_ref.document(user_email).update({'onboarding_completed': True})
 
-
-        # Check if credentials are available in the session and convert them
         if 'credentials' in session and session['credentials']:
             session['logged_in'] = True
             session['credentials'] = credentials_to_dict(google_credentials.Credentials(**session['credentials']))
@@ -222,8 +207,9 @@ def complete_onboarding():
 
         return jsonify({'status': 'success'})
     except Exception as e:
-        logging.error(f"Error in complete_onboarding: {e}")
+        print(f"Error in complete_onboarding: {e}")  # Print statement for debugging
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 
 @main.route('/abandon_onboarding')

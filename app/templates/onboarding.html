@@ -274,6 +274,56 @@
             //Session storage
             let onboardingData = {};
 
+            function uploadAvatar() {
+                const avatarFile = document.getElementById('avatar-upload').files[0];
+                console.log("uploadAvatar called with file:", avatarFile); // Debugging
+
+                if (avatarFile) {
+                    let formData = new FormData();
+                    formData.append('avatar', avatarFile);
+                    console.log("FormData prepared", formData); // Debugging
+
+                    fetch('/upload_avatar', {
+                        method: 'POST',
+                        body: formData
+                    }).then(response => {
+                        console.log("Upload response received", response); // Debugging
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.status === 'success') {
+                            console.log('Avatar uploaded successfully', data); // Debugging
+                            onboardingData.avatar = data.avatarURL; // Store the avatar URL
+                        } else {
+                            console.error('Error uploading avatar:', data.message);
+                        }
+                    }).catch(error => {
+                        console.error('Error in uploadAvatar:', error);
+                    });
+                } else {
+                    console.log("No file to upload"); // Debugging
+                }
+            }
+
+            function previewAvatar(event) {
+                const reader = new FileReader();
+                const file = event.target.files[0];
+                const avatarPlaceholder = document.getElementById('avatar-placeholder');
+                const avatarButton = document.getElementById('avatar-button');
+
+                if (file) {
+                    reader.readAsDataURL(file);
+                    reader.onloadend = function() {
+                        avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
+                        avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
+                        uploadAvatar(); // Add this line to call uploadAvatar
+                    };
+                }
+            }
+
+
+
+
             function storeBusinessInfo() {
                 onboardingData.businessName = document.getElementById('business-name').value;
                 onboardingData.businessDescription = document.getElementById('business-description').value;
@@ -293,44 +343,39 @@
                 onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent);
             }
                                
-            function completeOnboarding() {
-                // Store business info and goals & preferences before sending data
-                storeBusinessInfo();
-                storeGoalsAndPreferences();
-
-                fetch('/complete_onboarding', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(onboardingData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        window.location.href = "{{ url_for('main.index') }}"; // Redirect to index which will handle where to go next
-                    } else {
-                        console.error('Error:', data.message);
-                    }
-                });
-            }
-
-
-
-
 
 
 
             function saveBusinessInfo() {
+                onboardingData.businessName = document.getElementById('business-name').value;
+                onboardingData.businessDescription = document.getElementById('business-description').value;
+                
+                // Add code here to send business info to the server
+                fetch('/save_business_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        businessName: onboardingData.businessName,
+                        businessDescription: onboardingData.businessDescription
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    console.log('Business info saved:', data);
+                }).catch(error => {
+                    console.error('Error saving business info:', error);
+                });
+
                 currentStep = 3; // Set this to the number of the next step
                 showStep(currentStep);
             }
 
 
 
-
-
             function saveGoalsAndPreferences() {
+                onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent.trim());
+                onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent.trim());
                 currentStep = 5; // Set this to the number of the next step
                 showStep(currentStep);
             }
@@ -346,20 +391,11 @@
                 }
             }
 
-            function previewAvatar(event) {
-                const reader = new FileReader();
-                const file = event.target.files[0];
-                const avatarPlaceholder = document.getElementById('avatar-placeholder');
-                const avatarButton = document.getElementById('avatar-button');
+            
 
-                if (file) {
-                    reader.readAsDataURL(file);
-                    reader.onloadend = function() {
-                        avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
-                        avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
-                    };
-                }
-            }
+
+
+           
 
             function removeAvatar() {
                 const avatarPlaceholder = document.getElementById('avatar-placeholder');
@@ -370,6 +406,46 @@
                 avatarButton.textContent = 'Upload'; // Change button text back to 'Upload'
             }
 
+
+            function completeOnboarding() {
+                // Check if avatar is being uploaded, and wait for it to complete
+                if (onboardingData.avatarPromise) {
+                    onboardingData.avatarPromise.then(() => {
+                        sendOnboardingData();
+                    }).catch(error => {
+                        console.error('Error during avatar upload:', error);
+                    });
+                } else {
+                    sendOnboardingData();
+                }
+            }
+
+            function sendOnboardingData() {
+                // Store business info and goals & preferences before sending data
+                storeBusinessInfo();
+                storeGoalsAndPreferences();
+
+                console.log('Sending onboarding data:', onboardingData);
+
+                // Now send the complete data
+                fetch('/complete_onboarding', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(onboardingData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.location.href = "{{ url_for('main.index') }}";
+                    } else {
+                        console.error('Error:', data.message);
+                    }
+                }).catch(error => {
+                    console.error('Error during data submission:', error);
+                });
+            }
 
 
 

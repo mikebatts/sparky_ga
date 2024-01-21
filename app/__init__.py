@@ -11,13 +11,15 @@ import os
 import firebase_admin
 from firebase_admin import credentials, initialize_app
 
+
 cred_path = os.getenv('FIREBASE_CREDENTIALS')
 storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
 cred = credentials.Certificate(cred_path)
 if not firebase_admin._apps:
     firebase_admin.initialize_app(cred, {
-        'storageBucket': storage_bucket
+        'storageBucket': storage_bucket.replace('gs://', '')
     })
+
 
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
