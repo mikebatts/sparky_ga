@@ -207,6 +207,10 @@
     height: calc(100vh - 92px); /* Subtract the height of the onboarding-nav */
 }
 
+/* .edit-subhead p {
+    font-weight: 500 !important;
+} */
+
 
 .container-edit {
     display: flex;
@@ -273,7 +277,7 @@
 .edit-CTA-container {
     margin-top: auto; /* Pushes it to the bottom */
     margin-bottom: 16px; /* Add some space at the bottom */
-    padding: 0 16px;
+    /* padding: 0 16px; */
    
 }
 
@@ -558,6 +562,7 @@ form {
     align-items: center;
     width: 100%;
     margin-top: 0px;
+    gap: 16px;
 }
 
 label {
@@ -829,7 +834,22 @@ footer {
     }
 
     .onboarding-biz-body p {
-        font-weight: 500;
+        /* font-weight: 500; */
+    }
+
+
+    .biz-info-wrapper {
+        /* Styles for the new wrapper div */
+        width: 100%;
+    }
+
+    .edit-CTA-container {
+        display: flex;
+        justify-content: left;
+    }
+
+    .edit-modal {
+        width: 800px;
     }
 
     h1 {
