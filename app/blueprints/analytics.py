@@ -209,38 +209,29 @@ def fetch_data():
             )
 
             ## OpenAI API call with the new combined prompt
-            response = openai_client.chat.completions.create(
-                model="gpt-4-1106-preview",
-                temperature=0,
-                messages=[
-                    {"role": "system", "content": "You are a professional analytics assistant, your job is to take the user's context for their business and their connected analytics, and deliver a personlized report. Their key insights and actionable strategies should be influenced by their goals and preferences they have ranked 1-5, this is very important and crucial, and should be acknowledged in the report. Also, do not reiterate their name or business description, just use it for context in your report."},
-                    {"role": "user", "content": combined_prompt}
-                ],
-                max_tokens=300  # Adjust as needed
-            )
-
-            # Combine the user context with the original prompt
-            # combined_prompt = user_context + prompt
-
-
-            
-
-            # Extract insights from the detailed analysis
-            # insights_text = response_detailed.choices[0].message.content
-            # print("Detailed Insights:", insights_text)
-            # session['insights'] = insights_text
-
-            # Extract and process the response
-            ai_response = response.choices[0].message.content
-            session['insights'] = ai_response
-            print("AI Response:", ai_response)
+            try:
+                response = openai_client.chat.completions.create(
+                    model="gpt-4-1106-preview",
+                    temperature=0,
+                    messages=[
+                        {"role": "system", "content": "You are a professional analytics assistant, your job is to take the user's context for their business and their connected analytics, and deliver a personalized report. Their key insights and actionable strategies should be influenced by their goals and preferences they have ranked 1-5, this is very important and crucial, and should be acknowledged in the report. Also, do not reiterate their name or business description, just use it for context in your report."},
+                        {"role": "user", "content": combined_prompt}
+                    ],
+                    max_tokens=300
+                )
+                ai_response = response.choices[0].message.content
+                session['insights'] = ai_response
+                print("AI Response:", ai_response)
+            except Exception as e:
+                logging.error(f"Error in OpenAI API call: {e}")
+                flash("An error occurred while processing the AI report, please try again. If the error persists, please contact support.", "error")
+                return redirect(url_for('main.index'))
 
             return redirect(url_for('reports.show_report'))
 
-
     except Exception as e:
         logging.error(f"Error in fetch-data: {e}")
-        flash("An error occurred while fetching data.", "error")
+        flash("An error occurred while fetching data, please contact support.", "error")
         return redirect(url_for('main.index'))
 
 
