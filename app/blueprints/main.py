@@ -211,6 +211,9 @@ def save_business_info():
             'businessDescription': data['businessDescription']
         })
 
+        # Update session with business name
+        session['user_business_name'] = data['businessName']
+
         print(f"Business info saved for {user_email}")
         return jsonify({'status': 'success'})
     except Exception as e:

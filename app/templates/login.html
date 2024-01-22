@@ -24,7 +24,7 @@
                 {% endif %}
             {% endwith %}
             <a href="{{ url_for('auth.authorize') }}"><button onclick="initiateLogin()">Sign in with Google</button></a>
-            <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p>
+            <p class="disclaimer">Don't have an account? <span class="signup-newuser"><a href="{{ url_for('auth.authorize') }}" onclick="initiateLogin()">Sign up now</span>.</p>
         </div>
         
     </div>
