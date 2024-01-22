@@ -10,6 +10,8 @@ from firebase_admin import storage
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 import os
+from app.utils import check_user_session
+
 
 import base64
 import io
@@ -21,6 +23,12 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logging.basicConfig(level=logging.DEBUG)
 
+
+
+# def check_user_session():
+#     session_check = check_user_session()
+#     if session_check:
+#         return session_check
 
 # Utility function to convert credentials to a dictionary
 def credentials_to_dict(credentials):
@@ -35,20 +43,6 @@ main = Blueprint('main', __name__, url_prefix='/')
 
 
 
-# @main.route('/')
-# def index():
-#     credentials_valid = False
-
-#     if 'credentials' in session:
-#         credentials = google_credentials.Credentials(**session['credentials'])
-#         credentials_valid = is_credentials_valid(credentials)
-
-#     if not credentials_valid:
-#         return render_template('login.html')
-#     elif 'properties' not in session or 'selected_property' not in session:
-#         return render_template('select_property.html', credentials_valid=credentials_valid)
-#     else:
-#         return render_template('report.html', credentials_valid=credentials_valid)
 
 @main.route('/')
 def index():
@@ -66,9 +60,10 @@ def index():
 
 @main.route('/select_property')
 def select_property():
-    if 'credentials' not in session:
-        flash('Please log in first.', 'error')
-        return redirect(url_for('auth.authorize'))
+    # Check user session
+    session_check = check_user_session()
+    if session_check:
+        return session_check  # Redirect to login if session expired
 
     credentials = google_credentials.Credentials(**session['credentials'])
     admin_client = AnalyticsAdminServiceClient(credentials=credentials)
@@ -95,6 +90,11 @@ def select_property():
 
 @main.route('/edit_profile')
 def edit_profile():
+    # Check user session
+    session_check = check_user_session()
+    if session_check:
+        return session_check  # Redirect to login if session expired
+    
     user_email = session.get('user_email')
     if not user_email:
         return redirect(url_for('auth.login'))
@@ -111,6 +111,11 @@ def edit_profile():
 
 @main.route('/update_profile', methods=['POST'])
 def update_profile():
+    # Check user session
+    session_check = check_user_session()
+    if session_check:
+        return session_check  # Redirect to login if session expired
+    
     user_email = session.get('user_email')
     if not user_email:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401

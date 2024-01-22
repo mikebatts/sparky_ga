@@ -8,9 +8,10 @@
 .alert.error {
     background-color: #ffcccc;
     color: red;
-    padding: 10px;
+    padding: 16px;
     margin: 10px 0;
-    border: 1px solid red;
+    /* border: 1px solid red; */
+    border-radius: 8px;
 }
 
 .disclaimer a {

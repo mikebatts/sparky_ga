@@ -1,4 +1,19 @@
 import re
+from flask import flash, redirect, url_for, session
+from google.oauth2 import credentials as google_credentials
+
+def check_user_session():
+    """
+    Check if the user is logged in and has valid credentials.
+    If not, flash a message and redirect to login.
+    """
+    if 'credentials' in session:
+        credentials = google_credentials.Credentials(**session['credentials'])
+        if not credentials.expired and credentials.valid:
+            return None  # User is logged in and has valid credentials
+    flash("Your session has expired, please sign in again.", "error")
+    return redirect(url_for('main.index'))  # Adjust 'main.login' to your login route
+
 
 def is_credentials_valid(credentials):
     """
