@@ -141,7 +141,11 @@ def update_complete_profile():
         'preferences': data.get('preferences')
     })
 
+    # Update session data
+    session['user_business_name'] = data.get('businessName')
+
     return jsonify({'status': 'success'})
+
 
 
 
