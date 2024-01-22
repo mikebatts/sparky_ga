@@ -65,11 +65,18 @@ def select_property():
     if session_check:
         return session_check  # Redirect to login if session expired
 
+    # Ensure 'credentials' are available in the session
+    if 'credentials' not in session:
+        flash("Your session has expired. Please log in again.", "error")
+        return redirect(url_for('auth.authorize'))
+
+    # Initialize Google Analytics Admin client with credentials
     credentials = google_credentials.Credentials(**session['credentials'])
     admin_client = AnalyticsAdminServiceClient(credentials=credentials)
 
     properties_list = []
     try:
+        # Fetching account summaries from Google Analytics
         account_summaries = admin_client.list_account_summaries(ListAccountSummariesRequest())
         for account in account_summaries.account_summaries:
             for property_summary in account.property_summaries:
@@ -82,9 +89,11 @@ def select_property():
                     'property_type': 'GA4'
                 })
     except Exception as e:
-        current_app.logger.error(f"Error fetching GA4 properties: {e}")
-        flash('Error fetching properties.', 'error')
+        # Logging the error and flashing a message to the user
+        logging.error(f"Error fetching GA4 properties: {e}")
+        flash('Error fetching properties. Please try again later.', 'error')
 
+    # Render the 'select_property.html' template with the properties list
     return render_template('select_property.html', properties=properties_list)
 
 
@@ -316,16 +325,14 @@ def reset_and_fetch():
     # Reset the selected property in the session
     session.pop('selected_property', None)
 
-    # Check if credentials are valid
-    credentials_valid = False
-    if 'credentials' in session:
-        credentials = google_credentials.Credentials(**session['credentials'])
-        credentials_valid = is_credentials_valid(credentials)
+    try:
+        if 'credentials' in session:
+            credentials = google_credentials.Credentials(**session['credentials'])
+            if not is_credentials_valid(credentials):
+                raise Exception("Invalid credentials")
 
-    if credentials_valid:
-        # If credentials are valid, redirect to property selection
-        return redirect(url_for('main.index'))
-    else:
-        # If credentials are not valid, redirect to login
-        flash("Your session has expired. Please sign in with your Google account again.", "error")
+        return redirect(url_for('main.select_property'))
+    except Exception as e:
+        logging.error(f"Credentials validation error: {e}")
+        flash("Your session has expired. Please sign in again.", "error")
         return redirect(url_for('auth.authorize'))

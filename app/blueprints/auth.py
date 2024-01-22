@@ -9,6 +9,7 @@ from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 from googleapiclient.discovery import build  # Import statement added
 import os
+import logging
 
 from app.database import db  # Import the Firestore client
 auth = Blueprint('auth', __name__, url_prefix='/auth')
@@ -41,13 +42,13 @@ def oauth2callback():
         scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'], 
         state=state)
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
-    authorization_response = request.url
-    flow.fetch_token(authorization_response=authorization_response)
-
-    credentials = flow.credentials
-    session['credentials'] = credentials_to_dict(credentials)
 
     try:
+        authorization_response = request.url
+        flow.fetch_token(authorization_response=authorization_response)
+        credentials = flow.credentials
+        session['credentials'] = credentials_to_dict(credentials)
+
         id_info = google_id_token.verify_oauth2_token(credentials.id_token, requests.Request())
         user_email = id_info['email']
         session['user_email'] = user_email
@@ -70,6 +71,10 @@ def oauth2callback():
         else:
             flash('Login not initiated by the user.')
             redirect_url = url_for('auth.authorize')
+    except Exception as e:
+        logging.error(f"Error during OAuth2 callback: {e}")
+        flash("Authentication error. Please try again.", "error")
+        return redirect(url_for('auth.authorize'))
 
     except ValueError:
         flash('Invalid token. Please try again.')
