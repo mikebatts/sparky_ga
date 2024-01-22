@@ -623,6 +623,16 @@ select {
     background-repeat: no-repeat;
 }
 
+/* Style for the placeholder */
+.select-placeholder {
+    color: #757575;
+}
+
+/* Style to reset color when an option is selected */
+.select-placeholder option {
+    color: black;
+}
+
 
 .custom-select-wrapper {
     position: relative;

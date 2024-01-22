@@ -181,58 +181,40 @@ def fetch_data():
             # Convert the Google Analytics data to a string format
             ga_data_string = json.dumps(combined_response_data)
 
-            # New step: Summarize the Google Analytics data
-            # summarized_data = summarize_ga_data(combined_response_data)
+            # Fetch user data from Firebase
+            user_email = session.get('user_email')
+            user_doc = db.collection('users').document(user_email).get()
+            user_data = user_doc.to_dict() if user_doc.exists else {}
 
-            # Prepare a single prompt for all tasks in the specified format
+            # Prepare the combined prompt
             business_name = user_data.get('businessName', 'Your Business')
             business_description = user_data.get('businessDescription', '')
             goals = ', '.join(user_data.get('goals', []))
             preferences = ', '.join(user_data.get('preferences', []))
 
-            # Prepare the personalized context introduction
-            user_context_prompt = (
+            combined_prompt = (
                 f"Business Name: {business_name}\n"
                 f"Description: {business_description}\n"
                 f"Goals: {goals}\n"
                 f"Preferences: {preferences}\n\n"
                 "Google Analytics Data:\n"
                 f"{ga_data_string}\n\n"
-                "Given this business context and the Google Analytics data, "
-                "please summarize key insights and suggest actionable strategies."
+                "Given this business description, goals, preferences, and the Google Analytics data, provide the following analytics report:\n\n"
+                "### Summary:\n"
+                "Provide a concise 3-4 sentence summary. Avoid using a list format.\n"
+                "### Key Insights:\n"
+                "Generate 4 key insights based on the data and user context (their ranked preferences). Each insight should include: a one-word title, a numeric data point or one word metric (only list the number or one word, don't do '1.39 sessions/user', do '1.39'. Don't do '0.94 seconds', do '0.94s'. We need this to be as short as possible), and one brief explanatory comment no more than 90 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
+                "### Actionable Strategies:\n"
+                "Suggest 4 actionable strategies based on the data and user context (ranked goals and preferences), 1-2 sentences each, using corresponding emojis as bullet points. Examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- 📈 Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'"
             )
 
             ## OpenAI API call with the new combined prompt
-            response_summary = openai_client.chat.completions.create(
+            response = openai_client.chat.completions.create(
                 model="gpt-4-1106-preview",
                 temperature=0,
                 messages=[
                     {"role": "system", "content": "You are a professional analytics assistant, your job is to take the user's context for their business and their connected analytics, and deliver a personlized report. Their key insights and actionable strategies should be influenced by their goals and preferences they have ranked 1-5, this is very important and crucial, and should be acknowledged in the report. Also, do not reiterate their name or business description, just use it for context in your report."},
-                    {"role": "user", "content": user_context_prompt}
-                ],
-                max_tokens=300  # Adjust as needed
-            )
-
-            # Extract the AI-generated summary
-            summarized_data = response_summary.choices[0].message.content
-            print("AI-generated Summary:", summarized_data)
-
-
-            detailed_prompt = (f"Analyze this summarized data: {summarized_data}\n\n"
-            "### Summary:\n"
-            "Provide a concise 3-4 sentence summary. Avoid using a list format.\n"
-            "### Key Insights:\n"
-            "Generate 4 key insights based on the data and user context (their ranked preferences). Each insight should include: a one-word title, a numeric data point or one word metric (only list the number or one word, dont do '1.39 sessions/user', do '1.39'. Dont do '0.94 seconds', do '0.94s'. We need this to be as short as possible), and one brief explanatory comment no more than 90 characters. Format each insight as a single bullet point. Follow this strict example: 'Traffic - 21.5k - Consistent growth in site visits', 'Source - Organic - Google is a key organic traffic driver.'\n"
-            "### Actionable Strategies:\n"
-            "Suggest 4 actionable strategies based on the data and user context (ranked goals and preferences), 1-2 sentences each, using corresponding emojis as bullet points. Here is a format examples: '- Investigate the cause of the low average session duration to understand if it's due to technical issues or content relevance.', '- 📈 Enhance SEO and content strategy to leverage Google as a significant organic traffic driver.'")
-
-            ## OpenAI API call with the new combined prompt
-            response_detailed = openai_client.chat.completions.create(
-                model="gpt-4-1106-preview",
-                temperature=0,
-                messages=[
-                    {"role": "system", "content": "You are a professional analytics assistant, your job is to take the user's context for their business and their connected analytics, and deliver a personlized report. Their key insights and actionable strategies should be influenced by their goals and preferences they have ranked 1-5, this is very important and crucial, and should be acknowledged in the report. Also, do not reiterate their name or business description, just use it for context in your report."},
-                    {"role": "user", "content": detailed_prompt}
+                    {"role": "user", "content": combined_prompt}
                 ],
                 max_tokens=300  # Adjust as needed
             )
@@ -244,9 +226,14 @@ def fetch_data():
             
 
             # Extract insights from the detailed analysis
-            insights_text = response_detailed.choices[0].message.content
-            print("Detailed Insights:", insights_text)
-            session['insights'] = insights_text
+            # insights_text = response_detailed.choices[0].message.content
+            # print("Detailed Insights:", insights_text)
+            # session['insights'] = insights_text
+
+            # Extract and process the response
+            ai_response = response.choices[0].message.content
+            session['insights'] = ai_response
+            print("AI Response:", ai_response)
 
             return redirect(url_for('reports.show_report'))
 

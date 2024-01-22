@@ -26,7 +26,7 @@
                     <input type="text" id="end-date" name="end_date" placeholder="End Date">
                 </div>
                 
-                <select name="property_id" id="property" onchange="checkPropertySelected()">
+                <select name="property_id" id="property" onchange="checkPropertySelected()" class="select-placeholder">
                     <option value="" disabled selected>Select a property</option>
                     {% for property in session['properties'] %}
                         <option value="{{ property['property_id'] }}">
@@ -61,8 +61,32 @@
 
     <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/js/datepicker-full.min.js"></script>
     <script>
-        
+
+        function checkPropertySelected() {
+                var propertySelect = document.getElementById('property');
+                var startDateInput = document.getElementById('start-date');
+                var endDateInput = document.getElementById('end-date');
+                var submitButton = document.getElementById('submit-button');
+
+                var isPropertySelected = propertySelect.value && propertySelect.value !== "";
+                var areDatesSelected = startDateInput.value && endDateInput.value;
+                submitButton.disabled = !(isPropertySelected && areDatesSelected);
+
+                // Toggle class based on whether the placeholder option is selected
+                if (!propertySelect.value || propertySelect.value === "") {
+                    propertySelect.classList.add('select-placeholder');
+                } else {
+                    propertySelect.classList.remove('select-placeholder');
+                }
+            }
+
+
         document.addEventListener('DOMContentLoaded', function() {
+            const startDateInput = document.getElementById('start-date');
+            const endDateInput = document.getElementById('end-date');
+            const propertySelect = document.getElementById('property');
+
+            // Fetch properties and initialize property select
             fetch('/get_properties').then(response => {
                 if(response.ok) {
                     return response.json();
@@ -70,49 +94,19 @@
                     throw new Error('Failed to fetch properties');
                 }
             }).then(data => {
-                var propertiesSelect = document.getElementById('property');
                 data.properties.forEach(property => {
-                    var option = document.createElement('option');
+                    const option = document.createElement('option');
                     option.value = property.property_id;
                     option.textContent = property.formatted_name;
-                    propertiesSelect.appendChild(option);
+                    propertySelect.appendChild(option);
                 });
-                checkPropertySelected();
             }).catch(error => {
                 console.error('Error:', error);
             });
-        });
 
-
-        function toggleDropdown() {
-            var dropdownContent = document.getElementById("navbar-dropdown");
-            dropdownContent.style.display = dropdownContent.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function checkPropertySelected() {
-            var propertySelect = document.getElementById('property');
-            var submitButton = document.getElementById('submit-button');
-            submitButton.disabled = !propertySelect.value || propertySelect.value === "";
-
-            // Update select color based on selection
-            if (propertySelect.value) {
-                propertySelect.style.color = "black";
-            } else {
-                propertySelect.style.color = "grey";
-            }
-        }
-
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const startDateInput = document.getElementById('start-date');
-            const endDateInput = document.getElementById('end-date');
-
-            // Get today's date and set max date to yesterday
-            const today = new Date();
+            // Initialize Date Range Picker
             const maxDate = new Date();
-            maxDate.setDate(today.getDate() - 1);
-
-            // Initialize the Date Range Picker without default dates
+            maxDate.setDate(maxDate.getDate() - 1);
             new DateRangePicker(document.getElementById('date-range-picker'), {
                 format: 'yyyy-mm-dd',
                 autohide: true,
@@ -120,20 +114,22 @@
                 maxDate: maxDate // Set max date as yesterday
             });
 
-            // Keep placeholders for start and end dates
-            startDateInput.placeholder = "Start Date";
-            endDateInput.placeholder = "End Date";
+            // Add event listeners
+            propertySelect.addEventListener('change', checkPropertySelected);
+            startDateInput.addEventListener('change', checkPropertySelected);
+            endDateInput.addEventListener('change', checkPropertySelected);
 
+            // Initial check
             checkPropertySelected();
         });
 
         document.addEventListener('click', function(event) {
-            var withinDatePicker = document.getElementById('date-range-picker').contains(event.target);
-            var datepickerIsOpen = !startDateInput.value && !endDateInput.value;
-            if (!withinDatePicker && datepickerIsOpen) {
-                // Manually hide the datepicker here
-                // You might need to call a method from the datepicker library or trigger an event
-            }
+        var withinDatePicker = document.getElementById('date-range-picker').contains(event.target);
+        var datepickerIsOpen = !startDateInput.value && !endDateInput.value;
+        if (!withinDatePicker && datepickerIsOpen) {
+            // Manually hide the datepicker here
+            // You might need to call a method from the datepicker library or trigger an event
+        }
         });
 
 
@@ -141,63 +137,64 @@
 
 
 
-    function fetchAndDisplayInsights(event) {
-        event.preventDefault();
-        var propertyId = document.getElementById('property').value;
-        var formData = new FormData();
-        formData.append('property_id', propertyId);
 
-        // Append date range to formData using the correct ID
-        var startDate = document.getElementById('start-date').value;
-        var endDate = document.getElementById('end-date').value;
-        var dateRange = `${startDate} - ${endDate}`;
-        formData.append('date_range', dateRange);
+        function fetchAndDisplayInsights(event) {
+            event.preventDefault();
+            var propertyId = document.getElementById('property').value;
+            var formData = new FormData();
+            formData.append('property_id', propertyId);
 
-        var gifLoader = document.getElementById('gif-loader');
-        var submitButton = document.getElementById('submit-button');
-        gifLoader.style.display = 'block';
-        submitButton.disabled = true;
-        submitButton.value = 'Fetching';
+            // Append date range to formData using the correct ID
+            var startDate = document.getElementById('start-date').value;
+            var endDate = document.getElementById('end-date').value;
+            var dateRange = `${startDate} - ${endDate}`;
+            formData.append('date_range', dateRange);
 
-        fetch('/analytics/fetch-data', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (response.ok) {
-                window.location.href = '/reports/report';
-            } else {
-                throw new Error('Network response was not ok.');
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching insights:', error);
-            gifLoader.style.display = 'none';
-            submitButton.disabled = false;
-            submitButton.value = 'Fetch Report';
-        });
-    }
+            var gifLoader = document.getElementById('gif-loader');
+            var submitButton = document.getElementById('submit-button');
+            gifLoader.style.display = 'block';
+            submitButton.disabled = true;
+            submitButton.value = 'Fetching';
 
-    function animateDotsOnButton(button) {
-        var count = 0;
-        var interval = setInterval(() => {
-            if(button.disabled) {
-                button.value = 'Fetching' + '.'.repeat(count % 4);
-                count++;
-            } else {
-                clearInterval(interval);
-            }
-        }, 500);
-    }
+            fetch('/analytics/fetch-data', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = '/reports/report';
+                } else {
+                    throw new Error('Network response was not ok.');
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching insights:', error);
+                gifLoader.style.display = 'none';
+                submitButton.disabled = false;
+                submitButton.value = 'Fetch Report';
+            });
+        }
 
-    function setPropertyType() {
-        var property = document.getElementById('property');
-        var selectedProperty = property.options[property.selectedIndex].text;
-        var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
-        document.getElementById('property_type').value = propertyType;
-    }
+        function animateDotsOnButton(button) {
+            var count = 0;
+            var interval = setInterval(() => {
+                if(button.disabled) {
+                    button.value = 'Fetching' + '.'.repeat(count % 4);
+                    count++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 500);
+        }
 
-    window.onload = setPropertyType;
+        function setPropertyType() {
+            var property = document.getElementById('property');
+            var selectedProperty = property.options[property.selectedIndex].text;
+            var propertyType = selectedProperty.includes('UA-') ? 'UA' : 'GA4';
+            document.getElementById('property_type').value = propertyType;
+        }
+
+        window.onload = setPropertyType;
 </script>
 
 <script>
