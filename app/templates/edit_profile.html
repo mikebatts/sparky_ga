@@ -242,13 +242,18 @@
             const avatarPlaceholder = document.getElementById('avatar-placeholder');
             const avatarButton = document.getElementById('avatar-button');
 
-            if (file) {
+             // Check if the file is an image
+            if (file && file.type.match('image.*')) {
                 reader.readAsDataURL(file);
                 reader.onloadend = function() {
                     avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
-                    avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
+                    avatarButton.textContent = 'Remove';
                     uploadAvatar(); // Call uploadAvatar here to handle file upload
                 };
+            } else {
+                // Show an error message if the file is not an image
+                alert('Please select an image file.');
+                removeAvatar();
             }
         }
 
@@ -278,6 +283,7 @@
 
         // Function to remove avatar
         function removeAvatar() {
+            const avatarUpload = document.getElementById('avatar-upload');
             const avatarPlaceholder = document.getElementById('avatar-placeholder');
             const avatarButton = document.getElementById('avatar-button');
 

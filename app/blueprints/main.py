@@ -98,14 +98,20 @@ def edit_profile():
     user_email = session.get('user_email')
     if not user_email:
         return redirect(url_for('auth.login'))
-    user_doc = db.collection('users').document(user_email).get()
-    if user_doc.exists:
-        user_data = user_doc.to_dict()
-        # Make sure user_data contains 'avatar', 'businessName', 'businessDescription', 'goals', 'preferences'
-        return render_template('edit_profile.html', user_data=user_data)
-    else:
-        flash("User data not found.", "error")
+
+    try:
+        user_doc = db.collection('users').document(user_email).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            return render_template('edit_profile.html', user_data=user_data)
+        else:
+            flash("User data not found.", "error")
+            return redirect(url_for('main.index'))
+    except Exception as e:
+        logging.error(f"Firestore operation failed: {e}")
+        flash("An error occurred while accessing the database.", "error")
         return redirect(url_for('main.index'))
+
 
 
 
@@ -122,13 +128,16 @@ def update_profile():
 
     data = request.get_json()
     users_ref = db.collection('users')
-    users_ref.document(user_email).update({
-        'businessName': data['businessName'],
-        'businessDescription': data['businessDescription'],
-        'avatar': data['avatar']
-    })
-
-    return jsonify({'status': 'success'})
+    try:
+        users_ref.document(user_email).update({
+            'businessName': data['businessName'],
+            'businessDescription': data['businessDescription'],
+            'avatar': data['avatar']
+        })
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logging.error(f"Error updating user profile: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to update user profile.'}), 500
 
 @main.route('/update_complete_profile', methods=['POST'])
 def update_complete_profile():
@@ -138,13 +147,16 @@ def update_complete_profile():
 
     data = request.get_json()
     users_ref = db.collection('users')
-    users_ref.document(user_email).update({
-        'businessName': data.get('businessName'),
-        'businessDescription': data.get('businessDescription'),
-        'avatar': data.get('avatar'),
-        'goals': data.get('goals'),
-        'preferences': data.get('preferences')
-    })
+    try:
+        users_ref.document(user_email).update({
+            'businessName': data['businessName'],
+            'businessDescription': data['businessDescription'],
+            'avatar': data['avatar']
+        })
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logging.error(f"Error updating user profile: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to update user profile.'}), 500
 
     # Update session data
     session['user_business_name'] = data.get('businessName')
@@ -218,12 +230,11 @@ def save_business_info():
 
         # Update session with business name
         session['user_business_name'] = data['businessName']
-
-        print(f"Business info saved for {user_email}")
         return jsonify({'status': 'success'})
     except Exception as e:
-        print(f"Error saving business info: {e}")
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logging.error(f"Error saving business info: {e}")
+        return jsonify({'status': 'error', 'message': 'An error occurred while accessing the database.'}), 500
+
 
 
 
@@ -249,23 +260,21 @@ def complete_onboarding():
         if not user_email:
             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-        # Reference to the users collection in Firestore
-        users_ref = db.collection('users')
-
         # Update the user document in Firestore
+        users_ref = db.collection('users')
         users_ref.document(user_email).set(data, merge=True)
         users_ref.document(user_email).update({'onboarding_completed': True})
 
+        # Update session
         if 'credentials' in session and session['credentials']:
             session['logged_in'] = True
             session['credentials'] = credentials_to_dict(google_credentials.Credentials(**session['credentials']))
         else:
             return jsonify({'status': 'error', 'message': 'Credentials not found in session'}), 401
-
         return jsonify({'status': 'success'})
     except Exception as e:
-        print(f"Error in complete_onboarding: {e}")  # Print statement for debugging
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        logging.error(f"Error in complete_onboarding: {e}")
+        return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
 
 
 
@@ -273,11 +282,16 @@ def complete_onboarding():
 def abandon_onboarding():
     user_email = session.get('user_email')
     if user_email:
-        user_doc = db.collection('users').document(user_email).get()
-        if user_doc.exists and not user_doc.to_dict().get('onboarding_completed', False):
-            db.collection('users').document(user_email).delete()
-            flash('Onboarding not completed. User record deleted.', 'info')
+        try:
+            user_doc = db.collection('users').document(user_email).get()
+            if user_doc.exists and not user_doc.to_dict().get('onboarding_completed', False):
+                db.collection('users').document(user_email).delete()
+                flash('Onboarding not completed. User record deleted.', 'info')
+        except Exception as e:
+            logging.error(f"Error in abandon_onboarding: {e}")
+            flash('An error occurred while processing your request.', 'error')
     return redirect(url_for('auth.logout'))
+
 
 
 
