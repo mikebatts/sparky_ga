@@ -34,6 +34,11 @@
                         </option>
                     {% endfor %}
                 </select>
+                {% if not properties %}
+                    <div class="no-properties-message">
+                        <p style="text-align: left;" class="disclaimer">Looks like you don't have any properties associated with your Google account. You can learn how to set up properties from <a target="_blank" href="https://support.google.com/analytics/answer/9304153?hl=en" target="_blank">Google's documentation</a>. <br><br>If you are a Shopify user, you can learn how to set up <a target="_blank" href="https://help.shopify.com/en/manual/reports-and-analytics/google-analytics/google-analytics-setup" target="_blank">Google Analytics with Shopify</a> to make the most out of Sparky.</p>
+                    </div>
+                {% endif %}
             </div>
 
 

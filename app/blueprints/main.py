@@ -147,6 +147,7 @@ def update_profile():
     except Exception as e:
         logging.error(f"Error updating user profile: {e}")
         return jsonify({'status': 'error', 'message': 'Failed to update user profile.'}), 500
+    
 
 @main.route('/update_complete_profile', methods=['POST'])
 def update_complete_profile():
@@ -313,8 +314,45 @@ def get_properties():
 
 @main.route('/account')
 def account():
-    # Your code to display the account page goes here
-    return render_template('account.html')
+    # Check user session
+    session_check = check_user_session()
+    if session_check:
+        return session_check
+    
+    user_email = session.get('user_email')
+    if not user_email:
+        return redirect(url_for('auth.login'))
+
+    try:
+        user_doc = db.collection('users').document(user_email).get()
+        if user_doc.exists:
+            user_data = user_doc.to_dict()
+            user_data['creationDate'] = user_doc.create_time.strftime('%B %d, %Y') # Format date here
+            return render_template('account.html', user_data=user_data)
+        else:
+            flash("User data not found.", "error")
+            return redirect(url_for('main.index'))
+    except Exception as e:
+        logging.error(f"Firestore operation failed: {e}")
+        flash("An error occurred while accessing the database.", "error")
+        return redirect(url_for('main.index'))
+    
+
+@main.route('/delete_account', methods=['POST'])
+def delete_account():
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+    try:
+        db.collection('users').document(user_email).delete()
+        session.clear()  # Clear the user's session
+        return jsonify({'status': 'success'})
+    except Exception as e:
+        logging.error(f"Error deleting user account: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to delete user account.'}), 500
+
+
 
 
 

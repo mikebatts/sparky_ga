@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html class="ob-html">
+<head>
+    <title>Edit Profile | Sparky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="ob-body">
+
+    <!-- Navigation Bar -->
+    <div class="onboarding-nav">
+        <button onclick="hideConfirmationStep()" class="onboard-nav-button" id="backButton" style="display:none;">
+            <i data-feather="chevron-left"></i>
+        </button>
+        <button onclick="returnToDashboard()" class="onboard-nav-button" id="closeButton">
+            <i data-feather="x"></i>
+        </button>
+    </div>
+
+    <!-- Profile Editing Modal -->
+    <div id="editProfileModal" class="edit-modal">
+        <!-- Account Main Step -->
+        <div id="accountView" class="modal-step">
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Account</h1>
+                        <div class="member-snippet">
+                            <img src="{{ user_data.avatar }}" alt="Avatar" class="user-avatar">
+                            <div class="member-details">
+                                <p class="user-name">{{ user_data.businessName }}</p>
+                                <p class="member-since">Member since {{ user_data.creationDate }}</p>
+                            </div>
+                        </div>
+                        <div class="resources-account">
+                            <!-- About Sparky link -->
+                            <div class="resource-item">
+                                <a target="_blank" href="https://www.usesparky.com/" class="resource-link">
+                                    <span>About Sparky</span>
+                                    <i class="account-icons" data-feather="chevron-right"></i>
+                                </a>
+                            </div>
+                            <!-- FAQ -->
+                            <div class="resource-item">
+                                <a target="_blank" href="#" class="resource-link">
+                                    <span>FAQ</span>
+                                    <i class="account-icons" data-feather="chevron-right"></i>
+                                </a>
+                            </div>
+                            <!-- Privacy & Legal -->
+                            <div class="resource-item">
+                                <a target="_blank" href="#" class="resource-link">
+                                    <span>Privacy & Legal</span>
+                                    <i class="account-icons" data-feather="chevron-right"></i>
+                                </a>
+                            </div>
+                            <!-- Contact Us -->
+                            <div class="resource-item">
+                                <a target="_blank" href="#" class="resource-link">
+                                    <span>Contact Us</span>
+                                    <i class="account-icons" data-feather="chevron-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                        
+                       
+                    </div>
+                    <div class="onboarding-CTA-container">
+                        <button class="delete-account-action" onclick="showConfirmationStep(event)">Delete Account</button>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Confirmation Modal -->
+        <div id="confirmationStep" class="modal-step" style="display:none;">
+            <div class="container-onboarding">
+                <div class="onboarding-biz-body">
+                    <div class="biz-info-wrapper">
+                        <h1>Are you sure?</h1>
+                        <p>Deleting your account is irreversible. All your data will be permanently removed.</p>
+                    </div>
+                    <div class="onboarding-CTA-container">
+                        <button onclick="hideConfirmationStep()">Nevermind</button>
+                        <button class="delete-confirm" onclick="deleteAccount()">Delete Account</button>
+                    </div>
+                    
+                </div>
+            </div> 
+            
+            
+        </div>
+    </div>
+
+    
+
+    <script>
+        function showConfirmationStep() {
+            document.getElementById('accountView').style.display = 'none'; // Hide main account view
+            document.getElementById('confirmationStep').style.display = 'block'; // Show confirmation step
+            document.getElementById('backButton').style.display = 'block'; // Show back button
+        }
+
+        function hideConfirmationStep() {
+            document.getElementById('confirmationStep').style.display = 'none'; // Hide confirmation step
+            document.getElementById('accountView').style.display = 'block'; // Show main account view
+            document.getElementById('backButton').style.display = 'none'; // Hide back button
+        }
+
+
+
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        function deleteAccount() {
+            // Make AJAX call to delete account
+            fetch('/delete_account', {
+                method: 'POST'
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = "{{ url_for('main.index') }}";
+                } else {
+                    alert('Error deleting account. Please try again.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+
+        function returnToDashboard() {
+            window.location.href = "{{ url_for('main.select_property') }}"; // Redirect to the select_property route
+        }
+    </script>
+    
+
+       
+</body>
+</html>
