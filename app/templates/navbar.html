@@ -29,9 +29,9 @@
             {% endif %}
         
             <!-- Dropdown links -->
-            <a href="{{ url_for('main.edit_profile') }}">Edit Profile</a>  <!-- Add this line -->
-            <a href="{{ url_for('main.account') }}">Account</a>
-            <a href="{{ url_for('auth.logout') }}">Sign out</a>
+            <a href="{{ url_for('main.edit_profile') }}"><i class="nav-icon" data-feather="edit-2"></i> Edit Profile</a>
+            <a href="{{ url_for('main.account') }}"><i class="nav-icon" data-feather="user"></i> Account</a>
+            <a href="{{ url_for('auth.logout') }}"><i  class="nav-icon"data-feather="log-out"></i> Sign out</a>
         </div>
     </div>
 </nav>

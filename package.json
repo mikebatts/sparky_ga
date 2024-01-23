@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "feather-icons": "^4.29.1",
+    "geist": "^1.2.1",
     "sortablejs": "^1.15.2"
   },
   "devDependencies": {
