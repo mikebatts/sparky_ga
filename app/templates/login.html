@@ -7,7 +7,7 @@
     <script src="/path/to/node_modules/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
-    <div class="container">
+    <div class="login-container">
         <div class="login-body">
             <div class="login-vis-container">
                 <img class="login-vis" src="{{ url_for('static', filename='images/login-vis.png') }}" alt="Login Graphic">
@@ -23,8 +23,10 @@
                     {% endfor %}
                 {% endif %}
             {% endwith %}
+            
             <a href="{{ url_for('auth.authorize') }}"><button onclick="initiateLogin()">Sign in with Google</button></a>
-            <p class="disclaimer">Don't have an account? <span class="signup-newuser"><a href="{{ url_for('auth.authorize') }}" onclick="initiateLogin()">Sign up now</span>.</p>
+            <!-- <p class="disclaimer">Don't have an account? <span class="signup-newuser"><a href="{{ url_for('auth.authorize') }}" onclick="initiateLogin()">Sign up now</a></span>.</p> -->
+            <p style="text-decoration: none; margin-bottom: 8px;" class="disclaimer">We value your privacy. No Google Analytics or Shopify data is <br>stored and OAuth tokens are used only once for your report.</p>
         </div>
         
     </div>

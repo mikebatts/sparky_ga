@@ -27,7 +27,7 @@
                 </div>
                 
                 <select name="property_id" id="property" onchange="checkPropertySelected()" class="select-placeholder">
-                    <option value="" disabled selected>Select a property</option>
+                    <option value="" disabled selected>Select Property</option>
                     {% for property in session['properties'] %}
                         <option value="{{ property['property_id'] }}">
                             {{ property['formatted_name'] }}

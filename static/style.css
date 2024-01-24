@@ -230,7 +230,7 @@
 .edit-modal {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 92px); /* Subtract the height of the onboarding-nav */
+    height: calc(100vh - 44px); /* Subtract the height of the onboarding-nav */
 }
 
 /* .edit-subhead p {
@@ -452,6 +452,7 @@
     font-weight: 500;
     font-size: 18px;
     margin-top: 0px;
+    opacity: 1;
 
 }
 
@@ -529,13 +530,23 @@ code, pre {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: calc(100vh - 60px); /* Adjust height to account for navbar height */
+    height: calc(100vh - 56px); /* Adjust height to account for navbar height */
     width: 100%;
     padding: 16px;
     box-sizing: border-box;
     overflow-y: auto; /* Add scroll for overflow content */
 }
 
+.login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: calc(100vh - 0px); /* Adjust height to account for navbar height */
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+    overflow-y: auto; /* Add scroll for overflow content */
+}
 
 .login-body {
     flex-grow: 1; /* Allow this div to grow and take available space */
@@ -549,6 +560,7 @@ code, pre {
     text-align: left;
     width: 100%;
     margin-top: 8px;
+    z-index: -1;
 }
 
 .prop-body {
@@ -645,6 +657,10 @@ h1 {
 
 }
 
+p {
+    opacity: 0.64;
+}
+
 ul, p, select, label {
     font-size: 16px;
     margin-bottom: 0px;
@@ -654,7 +670,7 @@ ul, p, select, label {
 
 .disclaimer {
     font-size: 12px;
-    line-height: 1.6;
+    line-height: 1.4;
     font-weight: 500;
     color: rgba(0, 0, 0, 0.5);
 }
