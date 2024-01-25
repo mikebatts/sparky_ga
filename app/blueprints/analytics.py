@@ -186,6 +186,9 @@ def fetch_data():
             user_doc = db.collection('users').document(user_email).get()
             user_data = user_doc.to_dict() if user_doc.exists else {}
 
+            # Summarize the Google Analytics data
+            summarized_ga_data = summarize_ga_data(combined_response_data, user_data)
+
             # Prepare the combined prompt
             business_name = user_data.get('businessName', 'Your Business')
             business_description = user_data.get('businessDescription', '')
@@ -198,7 +201,7 @@ def fetch_data():
                 f"Goals: {goals}\n"
                 f"Preferences: {preferences}\n\n"
                 "Google Analytics Data:\n"
-                f"{ga_data_string}\n\n"
+                f"{summarize_ga_data}\n\n"
                 "Given this business description, goals, preferences, and the Google Analytics data, provide the following analytics report:\n\n"
                 "### Summary:\n"
                 "Provide a concise 3-4 sentence summary. Avoid using a list format.\n"

@@ -23,30 +23,51 @@ def is_credentials_valid(credentials):
     # return False
 
 
-def summarize_ga_data(combined_data):
-        summary = {}
+def summarize_ga_data(combined_data, user_data):
+    # Initial variables for possible data points
+    total_sessions = 0
+    total_users = 0
+    avg_session_duration = 0
+    traffic_sources = {}
 
-        # Example: Extracting total sessions and average session duration
-        total_sessions = sum(int(row["sessions"]) for row in combined_data["rows"] if "sessions" in row)
-        total_users = sum(int(row["totalUsers"]) for row in combined_data["rows"] if "totalUsers" in row)
-        avg_session_duration = sum(float(row["averageSessionDuration"]) for row in combined_data["rows"] if "averageSessionDuration" in row) / len(combined_data["rows"])
+    # Extract relevant data points from combined_data
+    for row in combined_data["rows"]:
+        if "sessions" in row:
+            total_sessions += int(row["sessions"])
+        if "totalUsers" in row:
+            total_users += int(row["totalUsers"])
+        if "averageSessionDuration" in row:
+            avg_session_duration += float(row["averageSessionDuration"])
+        if "sessionSourceMedium" in row and "sessions" in row:
+            source = row["sessionSourceMedium"]
+            sessions = int(row["sessions"])
+            traffic_sources[source] = traffic_sources.get(source, 0) + sessions
 
-        # Example: Identifying top traffic sources
-        traffic_sources = {}
-        for row in combined_data["rows"]:
-            if "sessionSourceMedium" in row and "sessions" in row:
-                source = row["sessionSourceMedium"]
-                sessions = int(row["sessions"])
-                traffic_sources[source] = traffic_sources.get(source, 0) + sessions
-        top_traffic_sources = sorted(traffic_sources.items(), key=lambda x: x[1], reverse=True)[:3]
+    # Calculate average session duration if applicable
+    if combined_data["rows"]:
+        avg_session_duration /= len(combined_data["rows"])
 
-        # Building a summary string
-        summary_str = (f"Total Sessions: {total_sessions}, "
-                    f"Total Users: {total_users}, "
-                    f"Average Session Duration: {avg_session_duration:.2f} seconds. "
-                    f"Top Traffic Sources: {', '.join([source for source, _ in top_traffic_sources])}.")
-        
-        return summary_str
+    # Top traffic sources
+    top_traffic_sources = sorted(traffic_sources.items(), key=lambda x: x[1], reverse=True)[:3]
+
+    # Building a dynamic summary based on user preferences/goals
+    summary_elements = []
+
+    # Example logic to add relevant data points based on user preferences
+    if 'engagement' in user_data.get('preferences', []):
+        summary_elements.append(f"Average Session Duration: {avg_session_duration:.2f} seconds")
+
+    if 'audience' in user_data.get('preferences', []):
+        summary_elements.append(f"Total Users: {total_users}")
+
+    if 'acquisition' in user_data.get('preferences', []):
+        summary_elements.append(f"Top Traffic Sources: {', '.join([source for source, _ in top_traffic_sources])}")
+
+    # Combine the elements into a summary string
+    summary_str = ', '.join(summary_elements)
+
+    return summary_str
+
 
 
 def extract_section(text, section_title):
