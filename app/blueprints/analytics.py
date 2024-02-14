@@ -4,7 +4,10 @@ from google.analytics.data_v1beta.types import RunReportRequest, DateRange, Dime
 from app.utils import is_credentials_valid, summarize_ga_data
 from app.config import openai_client
 from google.oauth2 import credentials as google_credentials
-import json, logging
+import json
+import logging
+logging.basicConfig(level=logging.INFO)  # Or adjust the logging level as needed
+
 from datetime import datetime
 from app.database import db  # Import the Firestore client
 
@@ -20,6 +23,8 @@ def fetch_data():
 
         # Set the selected property in the session
         session['selected_property'] = property_id
+        session.pop('analytics_data', None)  # Clear previous analytics data if any
+
 
         # Check if credentials are valid
         credentials = google_credentials.Credentials(**session.get('credentials', {}))
@@ -109,19 +114,32 @@ def fetch_data():
 
             # Function to process and combine responses
             def process_response(response, combined_data):
+                # Extend the headers for dimensions and metrics based on the response
                 combined_data["dimension_headers"].extend([dh.name for dh in response.dimension_headers])
                 combined_data["metric_headers"].extend([mh.name for mh in response.metric_headers])
+                
+                # Process each row in the response
                 for row in response.rows:
+                    # Build a dictionary for dimension values
                     row_dict = {dh: dv.value for dh, dv in zip(combined_data["dimension_headers"], row.dimension_values)}
-                    row_dict.update({mh: mv.value for mh, mv in zip(combined_data["metric_headers"], row.metric_values)})
+                    
+                    # Update the dictionary with metric values
+                    # This is where we ensure that numeric values are handled correctly
+                    # For metrics expected to be integers, convert them safely from strings that may represent floating-point numbers
+                    for mh, mv in zip(combined_data["metric_headers"], row.metric_values):
+                        # Check if the metric is one of those we expect to be an integer and handle it accordingly
+                        if mh in ["sessions", "totalUsers", "transactions", "addToCarts", "checkouts", "ecommercePurchases"]:  # Add other metric names as needed
+                            # Convert floating-point strings to integers safely
+                            row_dict[mh] = int(float(mv.value))
+                        elif mh in ["averageSessionDuration"]:  # For metrics that should remain floating-point
+                            row_dict[mh] = float(mv.value)
+                        else:
+                            # For all other metrics, just store the value directly without conversion
+                            row_dict[mh] = mv.value
+                            
+                    # Append the processed row to the combined data
                     combined_data["rows"].append(row_dict)
 
-                    combined_data["rows"].extend([
-                    {
-                        "dimensions": [dv.value for dv in row.dimension_values],
-                        "metrics": [mv.value for mv in row.metric_values]
-                    } for row in response.rows
-                ])
 
             # Combined response data
             combined_response_data = {
@@ -133,6 +151,8 @@ def fetch_data():
             # Retrieve and split the date range from form data
             date_range = request.form['date_range']
             start_date, end_date = date_range.split(' - ') if ' - ' in date_range else (date_range, date_range)
+            print(f"Making GA4 API request for property: {numeric_property_id}, Date range: {start_date} to {end_date}")
+            logging.info(f"Fetching GA4 data for property: {property_id} for date range: {start_date} to {end_date}")
 
 
             # Batch 1 request
