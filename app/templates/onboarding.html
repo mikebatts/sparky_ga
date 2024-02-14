@@ -142,8 +142,49 @@
             </div>
         </div>
 
-        <!-- Confirmation Step -->
+        <!-- Notifications Step -->
         <div class="modal-step" id="step5" style="display:none;">
+            <div class="container-onboarding">
+            <div class="onboarding-biz-body">
+                <div class="biz-info-wrapper">
+                <h1>Your notifications.</h1>
+                <p>Choose how you’d like to stay updated with your latest reports emailed from Sparky.</p>
+                <div class="notif-options-container">
+                    <div class="notification-option">
+                        <span>Daily</span>
+                        <label class="switch">
+                        <input type="checkbox" id="report-daily" name="report_frequency" value="Daily">
+                        <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="notification-option">
+                        <span>Weekly</span>
+                        <label class="switch">
+                        <input type="checkbox" id="report-weekly" name="report_frequency" value="Weekly">
+                        <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="notification-option">
+                        <span>Monthly</span>
+                        <label class="switch">
+                        <input type="checkbox" id="report-monthly" name="report_frequency" value="Monthly">
+                        <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                </div>
+                <div class="edit-CTA-container">
+                <button onclick="nextStep(6)">Next</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        
+
+    
+
+        <!-- Confirmation Step -->
+        <div class="modal-step" id="step6" style="display:none;">
             <div class="container-onboarding">
                 <div class="onboarding-biz-body">
                     <div class="biz-info-wrapper">
@@ -246,8 +287,30 @@
             //     }
             // }
 
+            function storeNotificationSettings() {
+                onboardingData.reportFrequency = [];
+                if (document.getElementById('report-daily').checked) {
+                    onboardingData.reportFrequency.push('daily');
+                }
+                if (document.getElementById('report-weekly').checked) {
+                    onboardingData.reportFrequency.push('weekly');
+                }
+                if (document.getElementById('report-monthly').checked) {
+                    onboardingData.reportFrequency.push('monthly');
+                }
+                console.log('Notification settings saved:', onboardingData.reportFrequency);
+            }
+
+
+            // Modify the nextStep function
             function nextStep(stepNumber) {
                 console.log("Moving to next step:", stepNumber);
+
+                // Before moving from Notifications to Confirmation step
+                if (currentStep === 5) {
+                    storeNotificationSettings();
+                }
+
                 currentStep = stepNumber; // Update the current step
                 // Hide all steps
                 document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
@@ -255,6 +318,8 @@
                 var stepElement = document.getElementById('step' + stepNumber);
                 showStep(currentStep); // Update the display based on the current step
             }
+
+
 
             function previousStep(stepNumber) {
                 console.log("Returning to previous step:", stepNumber);

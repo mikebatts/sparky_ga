@@ -110,6 +110,8 @@
             </div>
         </div>
 
+
+
         <!-- Confirmation Step -->
         <div class="modal-step" id="step4" style="display:none;">
             <div class="container-onboarding">
@@ -190,8 +192,27 @@
             if (onboardingData.avatar) {
                 document.getElementById('avatar-placeholder').style.backgroundImage = `url(${onboardingData.avatar})`;
             }
+
+            populateList('goalsList', onboardingData.goals);
+            populateList('preferencesList', onboardingData.preferences);
         }
-    
+
+        function populateList(listId, items) {
+            const listElement = document.getElementById(listId);
+            listElement.innerHTML = '';
+            items.forEach((item, index) => {
+                let listItem = document.createElement('li');
+                listItem.className = 'draggable-item';
+                listItem.draggable = true;
+
+                // Exclude the numeric prefix if present in the item
+                let itemText = item.replace(/^\d+\.\s*/, '');
+                listItem.innerHTML = `<span class="item-number">${index + 1}</span> ${itemText} <i class="icon-right"></i>`;
+                listElement.appendChild(listItem);
+            });
+        }
+
+            
         // Setup sortable lists for goals and preferences
         function setupSortableLists() {
             new Sortable(document.getElementById('goalsList'), {
@@ -201,7 +222,7 @@
                     updateNumbers(evt.to);
                 }
             });
-    
+
             new Sortable(document.getElementById('preferencesList'), {
                 animation: 150,
                 ghostClass: "sortable-ghost",
@@ -210,6 +231,7 @@
                 }
             });
         }
+
     
         // Update numbers in goals and preferences lists
         function updateNumbers(list) {
@@ -321,38 +343,72 @@
             showStep(currentStep);
         }
 
+        // Helper function to create list item
+        function createListItem(text) {
+            const li = document.createElement('li');
+            li.className = 'draggable-item';
+            li.draggable = true;
+            li.innerHTML = `${text} <i class="icon-right"></i>`;
+            return li;
+        }
+
         // Function to save goals and preferences
         function saveGoalsAndPreferences() {
-            onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent.trim());
-            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent.trim());
-            currentStep = 3; // Set this to the number of the next step
+            onboardingData.goals = Array.from(document.getElementById('goalsList').children)
+                                            .map(li => li.textContent.split(/\d+\s/)[1].trim());
+            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children)
+                                                .map(li => li.textContent.split(/\d+\s/)[1].trim());
+
+            // Proceed to the next step
+            if (currentStep === 2) {
+                currentStep = 3; // Proceed to preferences
+            } else {
+                currentStep = 4; // Proceed to confirmation
+            }
             showStep(currentStep);
         }
 
-        
 
-        // Function to complete onboarding process
+
+
+
+
+
+
+        // Function to complete the profile update
         function completeProfileUpdate() {
-            storeBusinessInfo();
-            storeGoalsAndPreferences();
+            // Store business info and goals & preferences before sending data
+            storeBusinessInfo();  // This function should be defined to update onboardingData with current form values
+            storeGoalsAndPreferences();  // This function should also be defined accordingly
+
+            const profileData = {
+                businessName: onboardingData.businessName,
+                businessDescription: onboardingData.businessDescription,
+                avatar: onboardingData.avatar,
+                goals: onboardingData.goals,
+                preferences: onboardingData.preferences
+            };
 
             fetch('/update_complete_profile', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(onboardingData)
-            }).then(response => response.json())
+                body: JSON.stringify(profileData)
+            })
+            .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    window.location.href = "{{ url_for('main.select_property') }}"; // Change to select_property
+                    window.location.href = "{{ url_for('main.select_property') }}";
                 } else {
-                    console.error('Error completing profile update:', data.message);
+                    console.error('Error updating profile:', data.message);
                 }
             }).catch(error => {
                 console.error('Error during profile update:', error);
             });
         }
+
+
 
 
         // Store business information before sending data

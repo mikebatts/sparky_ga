@@ -112,6 +112,9 @@ def edit_profile():
         user_doc = db.collection('users').document(user_email).get()
         if user_doc.exists:
             user_data = user_doc.to_dict()
+            # Ensure goals and preferences are passed in the correct order
+            user_data['goals'] = user_data.get('goals', [])
+            user_data['preferences'] = user_data.get('preferences', [])
             return render_template('edit_profile.html', user_data=user_data)
         else:
             flash("User data not found.", "error")
@@ -138,10 +141,14 @@ def update_profile():
     data = request.get_json()
     users_ref = db.collection('users')
     try:
+        goals = data.get('goals', [])
+        preferences = data.get('preferences', [])
         users_ref.document(user_email).update({
             'businessName': data['businessName'],
             'businessDescription': data['businessDescription'],
-            'avatar': data['avatar']
+            'avatar': data['avatar'],
+            'goals': goals,
+            'preferences': preferences
         })
         return jsonify({'status': 'success'})
     except Exception as e:
@@ -156,22 +163,26 @@ def update_complete_profile():
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
     data = request.get_json()
+    print("Received data for profile update:", data)  # Add this line
+
     users_ref = db.collection('users')
     try:
+        goals = data.get('goals', [])
+        preferences = data.get('preferences', [])
+        print("Preferences Received:", preferences)  # Add this line
+
+        # Update Firestore with the goals and preferences
         users_ref.document(user_email).update({
             'businessName': data['businessName'],
             'businessDescription': data['businessDescription'],
-            'avatar': data['avatar']
+            'avatar': data['avatar'],
+            'goals': goals,
+            'preferences': preferences
         })
         return jsonify({'status': 'success'})
     except Exception as e:
-        logging.error(f"Error updating user profile: {e}")
-        return jsonify({'status': 'error', 'message': 'Failed to update user profile.'}), 500
-
-    # Update session data
-    session['user_business_name'] = data.get('businessName')
-
-    return jsonify({'status': 'success'})
+        logging.error(f"Error updating complete profile: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to update complete profile.'}), 500
 
 
 
@@ -264,27 +275,31 @@ def close_onboarding():
 def complete_onboarding():
     try:
         data = request.get_json()
-        print(f"Received onboarding data: {data}")  # Print statement for debugging
+        print(f"Received onboarding data: {data}")  # Debugging statement
 
         user_email = session.get('user_email')
         if not user_email:
             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-        # Update the user document in Firestore
+        # Update the user document in Firestore with all the onboarding data
         users_ref = db.collection('users')
         users_ref.document(user_email).set(data, merge=True)
+
+        # Mark onboarding as completed
         users_ref.document(user_email).update({'onboarding_completed': True})
 
-        # Update session
+        # Update session if needed
         if 'credentials' in session and session['credentials']:
             session['logged_in'] = True
             session['credentials'] = credentials_to_dict(google_credentials.Credentials(**session['credentials']))
         else:
             return jsonify({'status': 'error', 'message': 'Credentials not found in session'}), 401
+
         return jsonify({'status': 'success'})
     except Exception as e:
         logging.error(f"Error in complete_onboarding: {e}")
         return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
+
 
 
 

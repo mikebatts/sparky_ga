@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html class="ob-html">
+<head>
+    <title>Notifications | Sparky</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+</head>
+<body class="ob-body">
+
+    <!-- Navigation Bar -->
+    <div class="onboarding-nav">
+        <button onclick="hideConfirmationStep()" class="onboard-nav-button" id="backButton" style="display:none;">
+            <i data-feather="chevron-left"></i>
+        </button>
+        <button onclick="returnToDashboard()" class="onboard-nav-button" id="closeButton">
+            <i data-feather="x"></i>
+        </button>
+    </div>
+
+    <!-- Profile Editing Modal -->
+    <div id="editProfileModal" class="edit-modal">
+        
+        <!-- Notifications Step -->
+        <div class="modal-step" id="step5" style="display:none;">
+            <div class="container-onboarding">
+            <div class="onboarding-biz-body">
+                <div class="biz-info-wrapper">
+                <h1>Your notifications.</h1>
+                <p>Choose how you’d like to stay updated with your latest reports emailed from Sparky.</p>
+                <div class="notif-options-container">
+                    <div class="notification-option">
+                        <span>Daily</span>
+                        <label class="switch">
+                        <input type="checkbox" id="report-daily" name="report_frequency" value="Daily">
+                        <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="notification-option">
+                        <span>Weekly</span>
+                        <label class="switch">
+                        <input type="checkbox" id="report-weekly" name="report_frequency" value="Weekly">
+                        <span class="slider round"></span>
+                        </label>
+                    </div>
+                    <div class="notification-option">
+                        <span>Monthly</span>
+                        <label class="switch">
+                        <input type="checkbox" id="report-monthly" name="report_frequency" value="Monthly">
+                        <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                </div>
+                <div class="edit-CTA-container">
+                <button onclick="nextStep(6)">Next</button>
+                </div>
+            </div>
+            </div>
+        </div>
+        
+    </div>
+
+    
+
+    <script>
+        function showConfirmationStep() {
+            document.getElementById('accountView').style.display = 'none'; // Hide main account view
+            document.getElementById('confirmationStep').style.display = 'block'; // Show confirmation step
+            document.getElementById('backButton').style.display = 'block'; // Show back button
+        }
+
+        function hideConfirmationStep() {
+            document.getElementById('confirmationStep').style.display = 'none'; // Hide confirmation step
+            document.getElementById('accountView').style.display = 'block'; // Show main account view
+            document.getElementById('backButton').style.display = 'none'; // Hide back button
+        }
+
+
+
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').style.display = 'none';
+        }
+
+        function deleteAccount() {
+            // Make AJAX call to delete account
+            fetch('/delete_account', {
+                method: 'POST'
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.href = "{{ url_for('main.index') }}";
+                } else {
+                    alert('Error deleting account. Please try again.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+        });
+
+        function returnToDashboard() {
+            window.location.href = "{{ url_for('main.select_property') }}"; // Redirect to the select_property route
+        }
+    </script>
+    
+
+       
+</body>
+</html>
