@@ -238,29 +238,35 @@
             }
 
             function showStep(stepNumber) {
-                console.log('showStep called with step number: ' + stepNumber);
                 // Hide all steps
                 document.querySelectorAll('.modal-step').forEach(step => {
                     step.style.display = 'none';
                 });
-                // Hide the back button if on the first step
-                var backButton = document.getElementById('onboard-nav-button');
-                if (stepNumber === 1) {
-                    console.log('Hiding back button because stepNumber is 1');
-                    backButton.style.display = 'none';
-                } else {
-                    console.log('Showing back button because stepNumber is greater than 1');
-                    backButton.style.display = 'block';
-                }
                 // Show the current step
-                var currentStepElement = document.getElementById('step' + stepNumber);
-                if (currentStepElement) {
-                    currentStepElement.style.display = 'block';
-                } else {
-                    console.error('No element found for step', stepNumber);
-                }
+                document.getElementById('step' + stepNumber).style.display = 'block';
+                // Update back button visibility
+                document.getElementById('onboard-nav-button').style.display = stepNumber === 1 ? 'none' : 'block';
             }
 
+            // Ensure form submissions for steps with forms do not perform a default submit action
+            document.querySelectorAll('form').forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault(); // Prevent form submission
+                    // Call the respective save function based on the current step
+                    if (currentStep === 2) saveBusinessInfo();
+                    // Add similar conditions for other steps if they have forms and specific save functions
+                });
+            });
+
+            // Add event listeners for next buttons explicitly to handle next step logic
+            document.getElementById('savePreferencesBtn').addEventListener('click', saveGoalsAndPreferences);
+            document.getElementById('saveNotificationsBtn').addEventListener('click', function() {
+                storeNotificationSettings();
+                nextStep(6); // Move to confirmation step after saving notifications
+            });
+
+            // Add logic for handling completion of onboarding
+            document.getElementById('completeOnboardingBtn').addEventListener('click', completeOnboarding);
 
 
             function closeOnboarding() {
@@ -273,39 +279,40 @@
 
 
 
-            // function nextStep(stepNumber) {
-            //     console.log("Moving to next step:", stepNumber);
-            //     // Hide all steps
-            //     document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-            //     // Show next step
-            //     var nextStepElement = document.getElementById('step' + stepNumber);
-            //     console.log("Next step element:", nextStepElement);
-            //     if (nextStepElement) {
-            //         nextStepElement.style.display = 'block';
-            //     } else {
-            //         console.error('No element found for step', stepNumber);
-            //     }
-            // }
+            // Add to your existing JavaScript code in onboarding.html
 
-        
+            function saveNotificationSettings() {
+                // Store notification settings in onboardingData
+                onboardingData.reportFrequency = [];
+                if (document.getElementById('report-daily').checked) onboardingData.reportFrequency.push('Daily');
+                if (document.getElementById('report-weekly').checked) onboardingData.reportFrequency.push('Weekly');
+                if (document.getElementById('report-monthly').checked) onboardingData.reportFrequency.push('Monthly');
 
+                // Move to the confirmation step
+                nextStep(6);
+            }
 
-            // Modify the nextStep function
+            // Update the nextStep function to correctly handle transitions
             function nextStep(stepNumber) {
+                // Logic to show the correct step based on stepNumber
                 console.log("Moving to next step:", stepNumber);
-
-                // Before moving from Notifications to Confirmation step
-                if (currentStep === 5) {
-                    storeNotificationSettings();
-                }
-
-                currentStep = stepNumber; // Update the current step
                 // Hide all steps
                 document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                // Show next step
+                // Show the next step
                 var stepElement = document.getElementById('step' + stepNumber);
-                showStep(currentStep); // Update the display based on the current step
+                if (stepElement) {
+                    stepElement.style.display = 'block';
+                } else {
+                    console.error('Step element not found for step ' + stepNumber);
+                }
+                // Update the current step logic here if needed
             }
+
+            // Example function for handling the 'Get Started' button
+            document.querySelector('button').addEventListener('click', function() {
+                nextStep(2); // Move to the next step
+            });
+
 
 
 
