@@ -287,19 +287,7 @@
             //     }
             // }
 
-            function storeNotificationSettings() {
-                onboardingData.reportFrequency = [];
-                if (document.getElementById('report-daily').checked) {
-                    onboardingData.reportFrequency.push('daily');
-                }
-                if (document.getElementById('report-weekly').checked) {
-                    onboardingData.reportFrequency.push('weekly');
-                }
-                if (document.getElementById('report-monthly').checked) {
-                    onboardingData.reportFrequency.push('monthly');
-                }
-                console.log('Notification settings saved:', onboardingData.reportFrequency);
-            }
+        
 
 
             // Modify the nextStep function
@@ -406,9 +394,13 @@
             }
 
             function storeGoalsAndPreferences() {
-                onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent);
-                onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent);
+                onboardingData.goals = Array.from(document.getElementById('goalsList').children)
+                                            .map(item => item.textContent.trim().replace(/^\d+\s/, ''));
+                onboardingData.preferences = Array.from(document.getElementById('preferencesList').children)
+                                                .map(item => item.textContent.trim().replace(/^\d+\s/, ''));
             }
+
+
                                
 
 
@@ -440,9 +432,47 @@
 
 
 
+            // Function to save goals and preferences
             function saveGoalsAndPreferences() {
-                onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent.trim());
-                onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent.trim());
+                // Directly use the existing storeGoalsAndPreferences function to set the data
+                storeGoalsAndPreferences();
+
+                // Proceed to save notification settings as part of onboardingData
+                storeNotificationSettings(); // Make sure this captures notification preferences correctly
+
+                fetch('/update_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        businessName: onboardingData.businessName,
+                        businessDescription: onboardingData.businessDescription,
+                        avatar: onboardingData.avatar,
+                        goals: onboardingData.goals,
+                        preferences: onboardingData.preferences
+                    })
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log("Profile updated successfully");
+                        // Redirect or update UI accordingly
+                        if (currentStep === 4) {
+                            currentStep = 5; // Proceed to notifications
+                            showStep(currentStep);
+                        } else {
+                            // Assuming step 5 is the final step before completion
+                            completeOnboarding(); // Call completeOnboarding function to finalize onboarding
+                        }
+                    } else {
+                        console.error("Failed to update profile:", data.message);
+                    }
+                }).catch(error => {
+                    console.error("Error updating profile:", error);
+                });
+            
+
+
                 currentStep = 5; // Set this to the number of the next step
                 showStep(currentStep);
             }
@@ -475,6 +505,11 @@
 
 
             function completeOnboarding() {
+                // Ensure goals, preferences, and notification settings are formatted correctly
+                onboardingData.goals = onboardingData.goals.map(goal => goal.split(/\s(.+)/)[1]);
+                onboardingData.preferences = onboardingData.preferences.map(preference => preference.split(/\s(.+)/)[1]);
+
+
                 // Check if avatar is being uploaded, and wait for it to complete
                 if (onboardingData.avatarPromise) {
                     onboardingData.avatarPromise.then(() => {
@@ -483,23 +518,29 @@
                         console.error('Error during avatar upload:', error);
                     });
                 } else {
+                    storeBusinessInfo(); // This function stores business name and description
+                    storeGoalsAndPreferences(); // This function stores goals and preferences
+                    storeNotificationSettings(); // This function stores notification preferences
+
+                    // Sending the complete onboarding data to the server
                     sendOnboardingData();
                 }
             }
 
+
+            function storeNotificationSettings() {
+                onboardingData.reportFrequency = [];
+                if (document.getElementById('report-daily').checked) onboardingData.reportFrequency.push('Daily');
+                if (document.getElementById('report-weekly').checked) onboardingData.reportFrequency.push('Weekly');
+                if (document.getElementById('report-monthly').checked) onboardingData.reportFrequency.push('Monthly');
+            }
+
+
             function sendOnboardingData() {
-                // Store business info and goals & preferences before sending data
-                storeBusinessInfo();
-                storeGoalsAndPreferences();
-
                 console.log('Sending onboarding data:', onboardingData);
-
-                // Now send the complete data
                 fetch('/complete_onboarding', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
+                    headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(onboardingData)
                 })
                 .then(response => response.json())
@@ -513,6 +554,7 @@
                     console.error('Error during data submission:', error);
                 });
             }
+
 
 
 

@@ -352,12 +352,46 @@
             return li;
         }
 
+
+        
+        function storeGoalsAndPreferences() {
+            onboardingData.goals = Array.from(document.getElementById('goalsList').children)
+                                        .map(item => item.textContent.trim().replace(/^\d+\s/, ''));
+            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children)
+                                            .map(item => item.textContent.trim().replace(/^\d+\s/, ''));
+        }
+
+
         // Function to save goals and preferences
         function saveGoalsAndPreferences() {
-            onboardingData.goals = Array.from(document.getElementById('goalsList').children)
-                                            .map(li => li.textContent.split(/\d+\s/)[1].trim());
-            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children)
-                                                .map(li => li.textContent.split(/\d+\s/)[1].trim());
+            // Directly use the existing storeGoalsAndPreferences function to set the data
+            storeGoalsAndPreferences();
+
+
+            fetch('/update_profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    businessName: onboardingData.businessName, // Ensure this is included if needed
+                    businessDescription: onboardingData.businessDescription, // Ensure this is included if needed
+                    avatar: onboardingData.avatar, // Ensure this is included if needed
+                    goals: onboardingData.goals,
+                    preferences: onboardingData.preferences
+                })
+            }).then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log("Profile updated successfully");
+                    // Redirect or update UI accordingly
+                } else {
+                    console.error("Failed to update profile:", data.message);
+                }
+            }).catch(error => {
+                console.error("Error updating profile:", error);
+            });
+
 
             // Proceed to the next step
             if (currentStep === 2) {
@@ -418,12 +452,8 @@
             // Include other business-related fields as needed
         }
 
-        // Store goals and preferences before sending data
-        function storeGoalsAndPreferences() {
-            onboardingData.goals = Array.from(document.getElementById('goalsList').children).map(li => li.textContent.trim());
-            onboardingData.preferences = Array.from(document.getElementById('preferencesList').children).map(li => li.textContent.trim());
-            // Include other goal-related fields as needed
-        }
+
+
 
         function returnToDashboard() {
             window.location.href = "{{ url_for('main.select_property') }}"; // Redirect to the select_property route

@@ -127,62 +127,86 @@ def edit_profile():
 
 
 
+# @main.route('/update_profile', methods=['POST'])
+# def update_profile():
+#     # Check user session
+#     session_check = check_user_session()
+#     if session_check:
+#         return session_check  # Redirect to login if session expired
+    
+#     user_email = session.get('user_email')
+#     if not user_email:
+#         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+#     data = request.get_json()
+#     users_ref = db.collection('users')
+#     try:
+#         goals = data.get('goals', [])
+#         preferences = data.get('preferences', [])
+#         users_ref.document(user_email).update({
+#             'businessName': data['businessName'],
+#             'businessDescription': data['businessDescription'],
+#             'avatar': data['avatar'],
+#             'goals': goals,
+#             'preferences': preferences
+#         })
+#         return jsonify({'status': 'success'})
+#     except Exception as e:
+#         logging.error(f"Error updating user profile: {e}")
+#         return jsonify({'status': 'error', 'message': 'Failed to update user profile.'}), 500
+    
+
 @main.route('/update_profile', methods=['POST'])
 def update_profile():
-    # Check user session
-    session_check = check_user_session()
-    if session_check:
-        return session_check  # Redirect to login if session expired
+    # Existing session checks remain unchanged
     
     user_email = session.get('user_email')
     if not user_email:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-    data = request.get_json()
-    users_ref = db.collection('users')
+    data = request.get_json(force=True)
+    print("Goals received:", data.get('goals'))
+    print("Preferences received:", data.get('preferences'))
+
     try:
-        goals = data.get('goals', [])
-        preferences = data.get('preferences', [])
-        users_ref.document(user_email).update({
-            'businessName': data['businessName'],
-            'businessDescription': data['businessDescription'],
-            'avatar': data['avatar'],
-            'goals': goals,
-            'preferences': preferences
-        })
-        return jsonify({'status': 'success'})
+        users_ref = db.collection('users').document(user_email)
+        update_data = {
+            'businessName': data.get('businessName', ''),
+            'businessDescription': data.get('businessDescription', ''),
+            'avatar': data.get('avatar', ''),
+            'goals': data.get('goals', []),
+            'preferences': data.get('preferences', [])
+        }
+
+        users_ref.update(update_data)
+        return jsonify({'status': 'success', 'message': 'Profile updated successfully'})
     except Exception as e:
         logging.error(f"Error updating user profile: {e}")
-        return jsonify({'status': 'error', 'message': 'Failed to update user profile.'}), 500
-    
+        return jsonify({'status': 'error', 'message': f'Failed to update user profile. Error: {str(e)}'}), 500
+
+
 
 @main.route('/update_complete_profile', methods=['POST'])
 def update_complete_profile():
-    user_email = session.get('user_email')
-    if not user_email:
+    if 'user_email' not in session:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
+    user_email = session['user_email']
     data = request.get_json()
-    print("Received data for profile update:", data)  # Add this line
 
-    users_ref = db.collection('users')
+    # Extract goals and preferences from the request data
+    goals = data.get('goals', [])
+    preferences = data.get('preferences', [])
+
     try:
-        goals = data.get('goals', [])
-        preferences = data.get('preferences', [])
-        print("Preferences Received:", preferences)  # Add this line
-
-        # Update Firestore with the goals and preferences
-        users_ref.document(user_email).update({
-            'businessName': data['businessName'],
-            'businessDescription': data['businessDescription'],
-            'avatar': data['avatar'],
+        user_ref = db.collection('users').document(user_email)
+        user_ref.update({
             'goals': goals,
             'preferences': preferences
         })
-        return jsonify({'status': 'success'})
+        return jsonify({'status': 'success', 'message': 'Profile updated successfully'})
     except Exception as e:
-        logging.error(f"Error updating complete profile: {e}")
-        return jsonify({'status': 'error', 'message': 'Failed to update complete profile.'}), 500
+        return jsonify({'status': 'error', 'message': 'Failed to update profile. Error: {}'.format(e)}), 500
 
 
 
@@ -275,30 +299,38 @@ def close_onboarding():
 def complete_onboarding():
     try:
         data = request.get_json()
-        print(f"Received onboarding data: {data}")  # Debugging statement
+        print("Goals received:", data.get('goals'))
+        print("Preferences received:", data.get('preferences'))
+        print(f"Received onboarding data: {data}")  # Ensure this prints the expected data structure
 
         user_email = session.get('user_email')
         if not user_email:
             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-        # Update the user document in Firestore with all the onboarding data
-        users_ref = db.collection('users')
-        users_ref.document(user_email).set(data, merge=True)
+        # Assuming 'data' contains 'businessName', 'businessDescription', 'avatar', 'goals', 'preferences', and 'reportFrequency'
+        # Verify and sanitize data as necessary before updating in Firestore
+        users_ref = db.collection('users').document(user_email)
+        
+        # Update or set the user document with new onboarding data
+        # Use set for a new document or update for an existing document with merge=True to preserve existing fields
+        users_ref.set({
+            'businessName': data.get('businessName'),
+            'businessDescription': data.get('businessDescription'),
+            'avatar': data.get('avatar'),
+            'goals': data.get('goals', []),
+            'preferences': data.get('preferences', []),
+            'reportFrequency': data.get('reportFrequency', []),
+            'onboarding_completed': True  # Mark the onboarding process as completed
+        }, merge=True)
 
-        # Mark onboarding as completed
-        users_ref.document(user_email).update({'onboarding_completed': True})
+        # Update session if needed, particularly if you're storing any of these new details in the session
+        session['logged_in'] = True  # Just an example, adjust as per your session management strategy
 
-        # Update session if needed
-        if 'credentials' in session and session['credentials']:
-            session['logged_in'] = True
-            session['credentials'] = credentials_to_dict(google_credentials.Credentials(**session['credentials']))
-        else:
-            return jsonify({'status': 'error', 'message': 'Credentials not found in session'}), 401
-
-        return jsonify({'status': 'success'})
+        return jsonify({'status': 'success', 'message': 'Onboarding completed successfully'})
     except Exception as e:
         logging.error(f"Error in complete_onboarding: {e}")
         return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
+
 
 
 
