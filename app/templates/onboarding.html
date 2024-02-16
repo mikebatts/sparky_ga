@@ -49,7 +49,7 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}             
-                    <button onclick="nextStep(2)">Get Started</button>
+                    <button data-next-step="2">Get Started</button>
                     <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p>
                 </div>
             </div>
@@ -201,406 +201,150 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-
+            feather.replace(); // Initialize icons
+        
+            // Initialize sortable lists
             new Sortable(document.getElementById('goalsList'), {
                 animation: 150,
                 ghostClass: "sortable-ghost",
                 onEnd: function(evt) {
-                    updateNumbers(evt.to);
+                    updateNumbers('goalsList');
                 }
             });
-
+        
             new Sortable(document.getElementById('preferencesList'), {
                 animation: 150,
                 ghostClass: "sortable-ghost",
                 onEnd: function(evt) {
-                    updateNumbers(evt.to);
+                    updateNumbers('preferencesList');
                 }
             });
-
-            function updateNumbers(list) {
+        
+            function updateNumbers(listId) {
+                const list = document.getElementById(listId);
                 Array.from(list.children).forEach((item, index) => {
                     item.querySelector('.item-number').textContent = index + 1;
                 });
             }
-
-
-            });
         
-
             let currentStep = 1;
-
+            let onboardingData = {};
+        
             function goToPreviousStep() {
                 if (currentStep > 1) {
                     currentStep--;
                     showStep(currentStep);
                 }
             }
-
+        
             function showStep(stepNumber) {
-                // Hide all steps
-                document.querySelectorAll('.modal-step').forEach(step => {
-                    step.style.display = 'none';
-                });
-                // Show the current step
-                document.getElementById('step' + stepNumber).style.display = 'block';
-                // Update back button visibility
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                document.getElementById(`step${stepNumber}`).style.display = 'block';
+                currentStep = stepNumber;
                 document.getElementById('onboard-nav-button').style.display = stepNumber === 1 ? 'none' : 'block';
             }
-
-            // Ensure form submissions for steps with forms do not perform a default submit action
-            document.querySelectorAll('form').forEach(form => {
-                form.addEventListener('submit', function(event) {
-                    event.preventDefault(); // Prevent form submission
-                    // Call the respective save function based on the current step
-                    if (currentStep === 2) saveBusinessInfo();
-                    // Add similar conditions for other steps if they have forms and specific save functions
+        
+            document.querySelectorAll('.onboarding-CTA-container button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const stepTo = parseInt(this.getAttribute('data-next-step'));
+                    nextStep(stepTo);
                 });
             });
-
-            // Add event listeners for next buttons explicitly to handle next step logic
-            document.getElementById('savePreferencesBtn').addEventListener('click', saveGoalsAndPreferences);
-            document.getElementById('saveNotificationsBtn').addEventListener('click', function() {
-                storeNotificationSettings();
-                nextStep(6); // Move to confirmation step after saving notifications
-            });
-
-            // Add logic for handling completion of onboarding
-            document.getElementById('completeOnboardingBtn').addEventListener('click', completeOnboarding);
-
-
-            function closeOnboarding() {
-                fetch('/abandon_onboarding')
-                .then(() => {
-                    window.location.href = "{{ url_for('main.index') }}";
-                });
+        
+            function nextStep(stepNumber) {
+                // Implement step-specific logic before advancing
+                switch (currentStep) {
+                    case 1:
+                        // Code for handling the end of Step 1 if needed
+                        break;
+                    case 2:
+                        saveBusinessInfo();
+                        break;
+                    case 3:
+                        saveGoalsAndPreferences();
+                        break;
+                    case 4:
+                        saveNotificationSettings();
+                        break;
+                    default:
+                        console.log('Unknown step');
+                }
+        
+                if (stepNumber) {
+                    showStep(stepNumber);
+                }
             }
-
-
-
-
-            // Add to your existing JavaScript code in onboarding.html
-
+        
+            function saveBusinessInfo() {
+                onboardingData.businessName = document.getElementById('business-name').value;
+                onboardingData.businessDescription = document.getElementById('business-description').value;
+                // Optionally: uploadAvatar(); if you want to upload the avatar as soon as it's selected
+                nextStep(3); // Automatically proceed to the next step after saving
+            }
+        
+            function saveGoalsAndPreferences() {
+                onboardingData.goals = [...document.getElementById('goalsList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
+                onboardingData.preferences = [...document.getElementById('preferencesList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
+                nextStep(5); // Proceed to next step after saving
+            }
+        
             function saveNotificationSettings() {
-                // Store notification settings in onboardingData
                 onboardingData.reportFrequency = [];
                 if (document.getElementById('report-daily').checked) onboardingData.reportFrequency.push('Daily');
                 if (document.getElementById('report-weekly').checked) onboardingData.reportFrequency.push('Weekly');
                 if (document.getElementById('report-monthly').checked) onboardingData.reportFrequency.push('Monthly');
-
-                // Move to the confirmation step
-                nextStep(6);
+                nextStep(6); // Proceed to the final step
             }
-
-            // Update the nextStep function to correctly handle transitions
-            function nextStep(stepNumber) {
-                // Logic to show the correct step based on stepNumber
-                console.log("Moving to next step:", stepNumber);
-                // Hide all steps
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                // Show the next step
-                var stepElement = document.getElementById('step' + stepNumber);
-                if (stepElement) {
-                    stepElement.style.display = 'block';
-                } else {
-                    console.error('Step element not found for step ' + stepNumber);
-                }
-                // Update the current step logic here if needed
+        
+            function completeOnboarding() {
+                console.log('Completing onboarding with data:', onboardingData);
+                // Send onboarding data to the server
+                // Redirect or perform another action upon completion
             }
-
-            // Example function for handling the 'Get Started' button
-            document.querySelector('button').addEventListener('click', function() {
-                nextStep(2); // Move to the next step
-            });
-
-
-
-
-            function previousStep(stepNumber) {
-                console.log("Returning to previous step:", stepNumber);
-                currentStep = stepNumber; // Update the current step
-                // Hide all steps
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                // Show previous step
-                var prevStepElement = document.getElementById('step' + currentStep);
-                if (prevStepElement) {
-                    prevStepElement.style.display = 'block';
-                } else {
-                    console.error('No element found for step', currentStep);
-                }
-                showStep(currentStep); // Update the display based on the current step
-            }
-
-
-            //Session storage
-            let onboardingData = {};
-
+        
             function uploadAvatar() {
-                const avatarFile = document.getElementById('avatar-upload').files[0];
-                console.log("uploadAvatar called with file:", avatarFile); // Debugging
-
-                if (avatarFile) {
-                    let formData = new FormData();
-                    formData.append('avatar', avatarFile);
-                    console.log("FormData prepared", formData); // Debugging
-
-                    fetch('/upload_avatar', {
-                        method: 'POST',
-                        body: formData
-                    }).then(response => {
-                        console.log("Upload response received", response); // Debugging
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.status === 'success') {
-                            console.log('Avatar uploaded successfully', data); // Debugging
-                            onboardingData.avatar = data.avatarURL; // Store the avatar URL
-                        } else {
-                            console.error('Error uploading avatar:', data.message);
-                        }
-                    }).catch(error => {
-                        console.error('Error in uploadAvatar:', error);
-                    });
-                } else {
-                    console.log("No file to upload"); // Debugging
+                const avatarInput = document.getElementById('avatar-upload');
+                if (avatarInput.files.length > 0) {
+                    const fileReader = new FileReader();
+                    fileReader.onloadend = function(e) {
+                        onboardingData.avatar = e.target.result; // Assuming you want to save the Base64 representation
+                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
+                        // Optionally send the avatar to the server here
+                    };
+                    fileReader.readAsDataURL(avatarInput.files[0]);
                 }
             }
-
-            function previewAvatar(event) {
-                const reader = new FileReader();
-                const file = event.target.files[0];
-                const avatarPlaceholder = document.getElementById('avatar-placeholder');
-                const avatarButton = document.getElementById('avatar-button');
-
+        
+            // Initiate avatar upload and preview on file selection
+            document.getElementById('avatar-upload').addEventListener('change', function() {
+                const file = this.files[0];
                 if (file) {
-                    reader.readAsDataURL(file);
-                    reader.onloadend = function() {
-                        avatarPlaceholder.style.backgroundImage = `url(${reader.result})`;
-                        avatarButton.textContent = 'Remove'; // Change button text to 'Remove'
-                        uploadAvatar(); // Call uploadAvatar here to handle file upload
-                    };
+                    uploadAvatar();
                 }
-            }
-
-
-
-
-
-            function storeBusinessInfo() {
-                onboardingData.businessName = document.getElementById('business-name').value;
-                onboardingData.businessDescription = document.getElementById('business-description').value;
-
-                var avatarFile = document.getElementById('avatar-upload').files[0];
-                if (avatarFile) {
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        onboardingData.avatarBase64 = e.target.result;
-                    };
-                    reader.readAsDataURL(avatarFile);
-                }
-            }
-
-            function storeGoalsAndPreferences() {
-                onboardingData.goals = Array.from(document.getElementById('goalsList').children)
-                                            .map(item => item.textContent.trim().replace(/^\d+\s/, ''));
-                onboardingData.preferences = Array.from(document.getElementById('preferencesList').children)
-                                                .map(item => item.textContent.trim().replace(/^\d+\s/, ''));
-            }
-
-
-                               
-
-
-
-            function saveBusinessInfo() {
-                onboardingData.businessName = document.getElementById('business-name').value;
-                onboardingData.businessDescription = document.getElementById('business-description').value;
-                
-                // Add code here to send business info to the server
-                fetch('/save_business_info', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        businessName: onboardingData.businessName,
-                        businessDescription: onboardingData.businessDescription
-                    })
-                }).then(response => response.json())
-                .then(data => {
-                    console.log('Business info saved:', data);
-                }).catch(error => {
-                    console.error('Error saving business info:', error);
-                });
-
-                currentStep = 3; // Set this to the number of the next step
-                showStep(currentStep);
-            }
-
-
-
-            // Function to save goals and preferences
-            function saveGoalsAndPreferences() {
-                // Directly use the existing storeGoalsAndPreferences function to set the data
-                storeGoalsAndPreferences();
-
-                // Proceed to save notification settings as part of onboardingData
-                storeNotificationSettings(); // Make sure this captures notification preferences correctly
-
-                fetch('/update_profile', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        businessName: onboardingData.businessName,
-                        businessDescription: onboardingData.businessDescription,
-                        avatar: onboardingData.avatar,
-                        goals: onboardingData.goals,
-                        preferences: onboardingData.preferences
-                    })
-                }).then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log("Profile updated successfully");
-                        // Redirect or update UI accordingly
-                        if (currentStep === 4) {
-                            currentStep = 5; // Proceed to notifications
-                            showStep(currentStep);
-                        } else {
-                            // Assuming step 5 is the final step before completion
-                            completeOnboarding(); // Call completeOnboarding function to finalize onboarding
-                        }
-                    } else {
-                        console.error("Failed to update profile:", data.message);
-                    }
-                }).catch(error => {
-                    console.error("Error updating profile:", error);
-                });
-            
-
-
-                currentStep = 5; // Set this to the number of the next step
-                showStep(currentStep);
-            }
-
-
-
+            });
+        
+            // Toggle avatar upload/remove button text
             function handleAvatarClick() {
                 const avatarUpload = document.getElementById('avatar-upload');
+                const avatarButton = document.getElementById('avatar-button');
                 if (avatarUpload.value) {
                     removeAvatar();
+                    avatarButton.textContent = 'Upload'; // Change button text back to 'Upload'
                 } else {
                     avatarUpload.click();
                 }
             }
-
-            
-
-
-
-           
-
+        
             function removeAvatar() {
-                const avatarPlaceholder = document.getElementById('avatar-placeholder');
-                const avatarButton = document.getElementById('avatar-button');
-
                 document.getElementById('avatar-upload').value = '';
-                avatarPlaceholder.style.backgroundImage = '';
-                avatarButton.textContent = 'Upload'; // Change button text back to 'Upload'
+                document.getElementById('avatar-placeholder').style.backgroundImage = '';
+                onboardingData.avatar = ''; // Clear avatar data
             }
-
-
-            function completeOnboarding() {
-                // Ensure goals, preferences, and notification settings are formatted correctly
-                onboardingData.goals = onboardingData.goals.map(goal => goal.split(/\s(.+)/)[1]);
-                onboardingData.preferences = onboardingData.preferences.map(preference => preference.split(/\s(.+)/)[1]);
-
-
-                // Check if avatar is being uploaded, and wait for it to complete
-                if (onboardingData.avatarPromise) {
-                    onboardingData.avatarPromise.then(() => {
-                        sendOnboardingData();
-                    }).catch(error => {
-                        console.error('Error during avatar upload:', error);
-                    });
-                } else {
-                    storeBusinessInfo(); // This function stores business name and description
-                    storeGoalsAndPreferences(); // This function stores goals and preferences
-                    storeNotificationSettings(); // This function stores notification preferences
-
-                    // Sending the complete onboarding data to the server
-                    sendOnboardingData();
-                }
-            }
-
-
-            function storeNotificationSettings() {
-                onboardingData.reportFrequency = [];
-                if (document.getElementById('report-daily').checked) onboardingData.reportFrequency.push('Daily');
-                if (document.getElementById('report-weekly').checked) onboardingData.reportFrequency.push('Weekly');
-                if (document.getElementById('report-monthly').checked) onboardingData.reportFrequency.push('Monthly');
-            }
-
-
-            function sendOnboardingData() {
-                console.log('Sending onboarding data:', onboardingData);
-                fetch('/complete_onboarding', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(onboardingData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        window.location.href = "{{ url_for('main.index') }}";
-                    } else {
-                        console.error('Error:', data.message);
-                    }
-                }).catch(error => {
-                    console.error('Error during data submission:', error);
-                });
-            }
-
-
-
-
-
-
-            // This code should be run in the browser's console
-            function debugShowStep(stepNumber) {
-                // Hide all steps
-                document.querySelectorAll('.modal-step').forEach(step => {
-                    step.style.display = 'none';
-                });
-                // Hide the back button if on the first step
-                var backButton = document.getElementById('onboard-nav-button');
-                if (stepNumber === 1) {
-                    backButton.style.display = 'none';
-                } else {
-                    backButton.style.display = 'block'; // Show back button if not on the first step
-                }
-                // Show the current step
-                var currentStepElement = document.getElementById('step' + stepNumber);
-                if (currentStepElement) {
-                    currentStepElement.style.display = 'block';
-                } else {
-                    console.error('No element found for step', stepNumber);
-                }
-            }
-
-            // Call this function with different step numbers to see if it correctly shows/hides the back button
-            debugShowStep(1); // Should hide the back button
-            debugShowStep(2); // Should show the back button
-            debugShowStep(3); // Should show the back button
-
-
-
-            // Set the initial step
-            showStep(currentStep); // This will hide the back button on the first step
-
-            // Replace feather icons
-            feather.replace();
-    </script>
+        
+            // Initialize the first step display
+            showStep(currentStep);
+        });
+        </script>
+        
 </body>
 </html>
