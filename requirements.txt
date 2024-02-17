@@ -207,6 +207,8 @@ grpcio-status==1.60.0
     # via
     #   -r requirements.in
     #   google-api-core
+gunicorn==21.2.0
+    # via -r requirements.in
 h11==0.14.0
     # via
     #   -r requirements.in
@@ -366,6 +368,7 @@ overrides==7.4.0
 packaging==23.2
     # via
     #   -r requirements.in
+    #   gunicorn
     #   huggingface-hub
     #   langchain-core
     #   marshmallow
