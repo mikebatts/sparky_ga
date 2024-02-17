@@ -55,7 +55,7 @@ httpx-sse==0.4.0
 huggingface-hub==0.20.1
 humanfriendly==10.0
 idna==3.6
-importlib-metadata==6.11.0
+importlib-metadata>=5.0.0,<6.0.0
 importlib-resources==6.1.1
 itsdangerous==2.1.2
 Jinja2==3.1.2
