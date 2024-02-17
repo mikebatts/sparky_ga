@@ -28,7 +28,7 @@ def get_google_client_config():
 
 @auth.route('/authorize')
 def authorize():
-    # Clear existing session data
+    # Clear existing session dataa
     session.clear()
     session['initiating_login'] = True  # Set the flag when the login process is initiated
 
