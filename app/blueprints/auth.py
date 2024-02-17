@@ -9,11 +9,21 @@ from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 from googleapiclient.discovery import build  # Import statement added
 import os
+import json
+import base64
 import logging
 
 from app.database import db  # Import the Firestore client
 auth = Blueprint('auth', __name__, url_prefix='/auth')
 
+def get_google_client_config():
+    """Decodes the Google client configuration from a base64-encoded environment variable."""
+    encoded_client_config = os.environ.get("GOOGLE_CLIENT_SECRETS_BASE64")
+    if not encoded_client_config:
+        raise ValueError("The Google client configuration environment variable is missing.")
+    decoded_client_config = base64.b64decode(encoded_client_config)
+    client_config = json.loads(decoded_client_config)
+    return client_config
 
 
 @auth.route('/authorize')
@@ -23,9 +33,11 @@ def authorize():
     session['initiating_login'] = True  # Set the flag when the login process is initiated
 
 
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE,
-        scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'])
+    client_config = get_google_client_config()
+    flow = google_auth_oauthlib.flow.Flow.from_client_config(
+        client_config=client_config,
+        scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email']
+    )
 
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
     authorization_url, state = flow.authorization_url(
@@ -37,8 +49,10 @@ def authorize():
 @auth.route('/oauth2callback')
 def oauth2callback():
     state = session['state']
-    flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
-        CLIENT_SECRETS_FILE, 
+
+    client_config = get_google_client_config()
+    flow = google_auth_oauthlib.flow.Flow.from_client_config(
+        client_config=client_config, 
         scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'], 
         state=state)
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
