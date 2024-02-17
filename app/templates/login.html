@@ -13,7 +13,7 @@
                 <img class="login-vis" src="{{ url_for('static', filename='images/login-vis.png') }}" alt="Login Graphic">
             </div>
             <h1>Connect your Google<br>account to get started.</h1>
-            <p>Sparky interprets your analytics data for you, providing reports of how your business is doing.</p>
+            <p>Sparky interprets your analytics data for you, providing reports of how your business is doing. Sign in with Google to get started.</p>
         </div>
         <div class="CTA-container">
             {% with messages = get_flashed_messages(with_categories=true) %}
@@ -26,7 +26,7 @@
             
             <a href="{{ url_for('auth.authorize') }}"><button onclick="initiateLogin()">Sign in with Google</button></a>
             <!-- <p class="disclaimer">Don't have an account? <span class="signup-newuser"><a href="{{ url_for('auth.authorize') }}" onclick="initiateLogin()">Sign up now</a></span>.</p> -->
-            <p style="text-decoration: none; margin-bottom: 8px;" class="disclaimer">We value your privacy. No Google Analytics or Shopify data is <br>stored and OAuth tokens are used only once for your report.</p>
+            <p style="text-decoration: none; margin-bottom: 8px;" class="disclaimer">Sparky's use and transfer of information received from Google APIs adheres to the <a target="_blank" href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements. By signing in with Google you agree to allow Sparky to share data with third-party tools.</p>
         </div>
         
     </div>
