@@ -39,7 +39,7 @@
             <div class="container-onboarding">
                 <div class="onboarding-body">
                     <h1>Welcome to Sparky.</h1>
-                    <p>Connect your analytics and set your goals. We'll analyze your data to provide insights and strategies tailored towards you care about.</p>
+                    <p>Connect your analytics and set your goals. We'll analyze your data to provide insights and strategies tailored towards you care about. We currently support Google Analytics 4 with more integrations coming soon.</p>
                 </div>
                 <div class="onboarding-CTA-container">
                     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -49,8 +49,8 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}             
-                    <button data-next-step="2">Get Started</button>
-                    <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p>
+                    <button onclick="nextStep(2)">Get Started</button>
+                    <!-- <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p> -->
                 </div>
             </div>
         </div>
@@ -325,15 +325,23 @@
         
             // Toggle avatar upload/remove button text
             function handleAvatarClick() {
-                const avatarUpload = document.getElementById('avatar-upload');
-                const avatarButton = document.getElementById('avatar-button');
-                if (avatarUpload.value) {
-                    removeAvatar();
-                    avatarButton.textContent = 'Upload'; // Change button text back to 'Upload'
-                } else {
-                    avatarUpload.click();
+                const avatarInput = document.getElementById('avatar-upload');
+                avatarInput.click(); // Trigger file selection dialog
+            }
+
+            function previewAvatar(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
+                        // Optionally, immediately upload the avatar to Firebase here
+                        uploadAvatar(file);
+                    };
+                    reader.readAsDataURL(file);
                 }
             }
+
         
             function removeAvatar() {
                 document.getElementById('avatar-upload').value = '';
