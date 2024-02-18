@@ -286,30 +286,13 @@ def save_business_info():
 
 
 
-# @main.route('/close_onboarding')
-# def close_onboarding():
-#     # Clear session and redirect to login
-#     session.clear()
-#     return redirect(url_for('main.index'))
+@main.route('/close_onboarding')
+def close_onboarding():
+    # Clear session and redirect to login
+    session.clear()
+    return redirect(url_for('main.index'))
 
-@main.route('/abandon_onboarding')
-def abandon_onboarding():
-    user_email = session.get('user_email')
-    if user_email:
-        try:
-            # Check if the onboarding_completed field exists and is False before deleting
-            user_doc = db.collection('users').document(user_email).get()
-            if user_doc.exists and not user_doc.to_dict().get('onboarding_completed', False):
-                db.collection('users').document(user_email).delete()
-                session.clear()  # Clear the session
-                return jsonify({'status': 'success', 'message': 'Onboarding abandoned and user data deleted successfully.'})
-            else:
-                return jsonify({'status': 'error', 'message': 'User data not found or onboarding already completed.'}), 404
-        except Exception as e:
-            logging.error(f"Error in abandon_onboarding: {e}")
-            return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
-    else:
-        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
 
 
 
@@ -353,21 +336,38 @@ def complete_onboarding():
 
 
 
+# @main.route('/abandon_onboarding')
+# def abandon_onboarding():
+#     user_email = session.get('user_email')
+#     if user_email:
+#         try:
+#             user_doc = db.collection('users').document(user_email).get()
+#             if user_doc.exists and not user_doc.to_dict().get('onboarding_completed', False):
+#                 db.collection('users').document(user_email).delete()
+#                 flash('Onboarding not completed. User record deleted.', 'info')
+#         except Exception as e:
+#             logging.error(f"Error in abandon_onboarding: {e}")
+#             flash('An error occurred while processing your request.', 'error')
+#     return redirect(url_for('auth.logout'))
+
 @main.route('/abandon_onboarding')
 def abandon_onboarding():
     user_email = session.get('user_email')
     if user_email:
         try:
+            # Check if the onboarding_completed field exists and is False before deleting
             user_doc = db.collection('users').document(user_email).get()
             if user_doc.exists and not user_doc.to_dict().get('onboarding_completed', False):
                 db.collection('users').document(user_email).delete()
-                flash('Onboarding not completed. User record deleted.', 'info')
+                session.clear()  # Clear the session
+                return jsonify({'status': 'success', 'message': 'Onboarding abandoned and user data deleted successfully.'})
+            else:
+                return jsonify({'status': 'error', 'message': 'User data not found or onboarding already completed.'}), 404
         except Exception as e:
             logging.error(f"Error in abandon_onboarding: {e}")
-            flash('An error occurred while processing your request.', 'error')
-    return redirect(url_for('auth.logout'))
-
-
+            return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
+    else:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
 
 
