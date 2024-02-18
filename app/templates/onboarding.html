@@ -241,7 +241,17 @@
             // document.getElementById('notifications-next').addEventListener('click', saveNotificationSettings);
 
             document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
-            document.getElementById('closeButton').addEventListener('click', closeOnboarding);
+            document.getElementById('closeButton').addEventListener('click', function() {
+                fetch('/abandon_onboarding')
+                .then(response => {
+                    if(response.ok) {
+                        window.location.href = "{{ url_for('auth.logout') }}";
+                    } else {
+                        console.error('Failed to abandon onboarding and delete user data.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
             document.getElementById('business-info-next').addEventListener('click', function() {
                 // Collect business info data
                 onboardingData.businessName = document.getElementById('business-name').value;
@@ -390,6 +400,9 @@
                 if (document.getElementById('report-monthly').checked) onboardingData.reportFrequency.push('Monthly');
                 nextStep(6); // Proceed to the final step
             }
+
+         
+
         
             function completeOnboarding() {
                 fetch('/complete_onboarding', {
