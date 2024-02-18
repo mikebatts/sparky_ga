@@ -86,7 +86,7 @@
                         </div>
 
                         <div class="onboarding-CTA-container">
-                            <button type="button" onclick="saveBusinessInfo()">Next</button>
+                            <button type="button" id="business-info-next">Next</button>
                         </div>
                     </form>
                 </div>
@@ -132,7 +132,7 @@
                         </ul>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <button onclick="saveGoalsAndPreferences()">Next</button>
+                        <button id="preferences-next">Next</button>
                     </div>
                 </div>
             </div>
@@ -170,7 +170,7 @@
                 </div>
                 </div>
                 <div class="edit-CTA-container">
-                <button onclick="nextStep(6)">Next</button>
+                    <button id="notifications-next">Next</button>
                 </div>
             </div>
             </div>
@@ -228,6 +228,18 @@
 
             document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
             document.getElementById('closeButton').addEventListener('click', closeOnboarding);
+            document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
+            // Assuming you have buttons with specific IDs for each next step in your HTML
+            document.querySelectorAll('[data-next-step]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const stepTo = parseInt(this.getAttribute('data-next-step'));
+                    nextStep(stepTo);
+                });
+            });
+            document.getElementById('business-info-next').addEventListener('click', saveBusinessInfo);
+            document.getElementById('preferences-next').addEventListener('click', saveGoalsAndPreferences);
+            document.getElementById('notifications-next').addEventListener('click', saveNotificationSettings);
+
 
         
             function goToPreviousStep() {
@@ -279,6 +291,7 @@
                 onboardingData.businessName = document.getElementById('business-name').value;
                 onboardingData.businessDescription = document.getElementById('business-description').value;
                 // Optionally: uploadAvatar(); if you want to upload the avatar as soon as it's selected
+                console.log('Business Info Saved:', onboardingData);
                 nextStep(3); // Automatically proceed to the next step after saving
             }
         
@@ -297,9 +310,26 @@
             }
         
             function completeOnboarding() {
-                console.log('Completing onboarding with data:', onboardingData);
-                // Send onboarding data to the server
-                // Redirect or perform another action upon completion
+                fetch('/complete_onboarding', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(onboardingData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Redirect or inform the user of successful onboarding
+                        alert('Onboarding completed successfully!');
+                        window.location.href = "{{ url_for('main.select_property') }}"; // Adjust this to your dashboard or relevant page
+                    } else {
+                        alert('Failed to complete onboarding. Please try again.');
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
             }
         
             function uploadAvatar() {
@@ -325,9 +355,12 @@
         
             // Toggle avatar upload/remove button text
             function handleAvatarClick() {
-                const avatarInput = document.getElementById('avatar-upload');
-                avatarInput.click(); // Trigger file selection dialog
+                document.getElementById('avatar-upload').click();
             }
+
+            document.getElementById('avatar-upload').addEventListener('change', function(event) {
+                previewAvatar(event);
+            });
 
             function previewAvatar(event) {
                 const file = event.target.files[0];
@@ -335,8 +368,7 @@
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
-                        // Optionally, immediately upload the avatar to Firebase here
-                        uploadAvatar(file);
+                        // Here, you could also upload the avatar to Firebase as needed
                     };
                     reader.readAsDataURL(file);
                 }
