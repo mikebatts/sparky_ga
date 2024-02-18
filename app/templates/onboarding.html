@@ -12,12 +12,8 @@
 <body class="ob-body">
 
     <div class="onboarding-nav">
-        <button onclick="goToPreviousStep()" class="onboard-nav-button" id="onboard-nav-button">
-            <i data-feather="chevron-left"></i>
-        </button>
-        <button onclick="closeOnboarding()" class="onboard-nav-button" id="closeButton">
-            <i data-feather="x"></i>
-        </button>
+        <button class="onboard-nav-button" id="onboard-nav-button"><i data-feather="chevron-left"></i></button>
+        <button class="onboard-nav-button" id="closeButton"><i data-feather="x"></i></button>
     </div>
 
     <!-- Onboarding Modal -->
@@ -229,21 +225,16 @@
         
             let currentStep = 1;
             let onboardingData = {};
+
+            document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
+            document.getElementById('closeButton').addEventListener('click', closeOnboarding);
+
         
             function goToPreviousStep() {
                 if (currentStep > 1) {
                     currentStep--;
                     showStep(currentStep);
-                } else {
-                    closeOnboarding(); // If at the first step, close onboarding
                 }
-            }
-        
-            function showStep(stepNumber) {
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                document.getElementById(`step${stepNumber}`).style.display = 'block';
-                currentStep = stepNumber;
-                document.getElementById('onboard-nav-button').style.display = stepNumber === 1 ? 'none' : 'block';
             }
 
 
@@ -252,13 +243,26 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.status === 'success') {
-                            window.location.href = "{{ url_for('auth.logout') }}"; // Redirect to login or a specific route
-                        } else {
-                            console.error('Failed to abandon onboarding:', data.message);
+                            window.location.href = "{{ url_for('auth.logout') }}";
                         }
                     })
                     .catch(error => console.error('Error:', error));
             }
+
+
+            function nextStep(stepNumber) {
+                if (stepNumber) {
+                    showStep(stepNumber);
+                }
+            }
+        
+            function showStep(stepNumber) {
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                document.getElementById(`step${stepNumber}`).style.display = 'block';
+                currentStep = stepNumber;
+            }
+
+
 
         
             document.querySelectorAll('.onboarding-CTA-container button').forEach(button => {
@@ -268,30 +272,7 @@
                 });
             });
         
-            function nextStep(stepNumber) {
-                // Implement step-specific logic before advancing
-                switch (currentStep) {
-                    case 1:
-                        // Code for handling the end of Step 1 if needed
-                        break;
-                    case 2:
-                        saveBusinessInfo();
-                        break;
-                    case 3:
-                        saveGoalsAndPreferences();
-                        break;
-                    case 4:
-                        saveNotificationSettings();
-                        break;
-                    default:
-                        console.log('Unknown step');
-                }
-        
-                if (stepNumber) {
-                    showStep(stepNumber);
-                }
-            }
-
+     
            
                     
             function saveBusinessInfo() {
