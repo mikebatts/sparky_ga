@@ -219,42 +219,65 @@ def onboarding():
     return render_template('onboarding.html', is_new_user=is_new_user)
 
 
+# @main.route('/upload_avatar', methods=['POST'])
+# def upload_avatar():
+#     try:
+#         avatar_file = request.files['avatar']
+#         if avatar_file:
+#             filename = secure_filename(avatar_file.filename)
+#             print(f"Received file: {filename}")  # Debugging
+
+#             # Ensure bucket name is specified correctly
+#             bucket_name = os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
+#             print(f"Bucket name: {bucket_name}")  # Debugging
+
+#             bucket = storage.bucket(bucket_name, app=firebase_admin.get_app())
+#             blob = bucket.blob(f'avatars/{filename}')
+
+#             blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
+#             blob.make_public()
+#             avatar_url = blob.public_url
+
+#             print(f"Avatar URL: {avatar_url}")  # Debugging
+
+#             # Update Firestore user document with the avatar URL
+#             user_email = session.get('user_email')
+#             if user_email:
+#                 users_ref = db.collection('users')
+#                 users_ref.document(user_email).update({'avatar': avatar_url})
+#                 session['user_avatar'] = avatar_url
+
+#             return jsonify({'status': 'success', 'avatarURL': avatar_url})
+#         else:
+#             print("No avatar file provided")  # Debugging
+#             return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+#     except Exception as e:
+#         print(f"Error in upload_avatar: {e}")  # Debugging
+#         return jsonify({'status': 'error', 'message': str(e)}), 500
+
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
+    if 'user_email' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
     try:
-        avatar_file = request.files['avatar']
+        avatar_file = request.files.get('avatar')
         if avatar_file:
             filename = secure_filename(avatar_file.filename)
-            print(f"Received file: {filename}")  # Debugging
-
-            # Ensure bucket name is specified correctly
-            bucket_name = os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
-            print(f"Bucket name: {bucket_name}")  # Debugging
-
-            bucket = storage.bucket(bucket_name, app=firebase_admin.get_app())
+            # Assuming FIREBASE_STORAGE_BUCKET is like 'sparky-408720.appspot.com'
+            bucket_name = current_app.config['FIREBASE_STORAGE_BUCKET']
+            bucket = storage.bucket(bucket_name)
             blob = bucket.blob(f'avatars/{filename}')
-
-            blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
+            blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
             blob.make_public()
             avatar_url = blob.public_url
-
-            print(f"Avatar URL: {avatar_url}")  # Debugging
-
             # Update Firestore user document with the avatar URL
-            user_email = session.get('user_email')
-            if user_email:
-                users_ref = db.collection('users')
-                users_ref.document(user_email).update({'avatar': avatar_url})
-                session['user_avatar'] = avatar_url
-
+            user_email = session['user_email']
+            db.collection('users').document(user_email).update({'avatar': avatar_url})
             return jsonify({'status': 'success', 'avatarURL': avatar_url})
         else:
-            print("No avatar file provided")  # Debugging
-            return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+            return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
     except Exception as e:
-        print(f"Error in upload_avatar: {e}")  # Debugging
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
 
     
 
@@ -320,28 +343,7 @@ def save_business_info():
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
 
-# @main.route('/upload_avatar', methods=['POST'])
-# def upload_avatar():
-#     user_email = session.get('user_email')
-#     if not user_email:
-#         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-    
-#     avatar_file = request.files.get('avatar')
-#     if avatar_file:
-#         # Save the file to Firebase Storage
-#         bucket = firebase_admin.storage.bucket()
-#         blob = bucket.blob(f'avatars/{user_email}/{avatar_file.filename}')
-#         blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
-#         blob.make_public()
-        
-#         # Save the avatar URL in the session or database as needed
-#         avatar_url = blob.public_url
-#         # Example: Saving the URL in the session for immediate use in the onboarding process
-#         session['avatar_url'] = avatar_url
-        
-#         return jsonify({'status': 'success', 'avatarURL': avatar_url})
-#     else:
-#         return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+
 
 
 

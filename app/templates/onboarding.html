@@ -198,6 +198,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace(); // Initialize icons
+            
         
             // Initialize sortable lists
             new Sortable(document.getElementById('goalsList'), {
@@ -225,6 +226,27 @@
         
             let currentStep = 1;
             let onboardingData = {};
+
+            // Define functions in the global scope
+            window.nextStep = function(stepNumber) {
+                currentStep = stepNumber;
+                showStep(currentStep);
+            };
+
+            window.handleAvatarClick = function() {
+                document.getElementById('avatar-upload').click();
+            };
+
+            window.previewAvatar = function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
 
             // document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
             // document.getElementById('closeButton').addEventListener('click', closeOnboarding);
@@ -278,12 +300,12 @@
                 }
             }
 
-            function nextStep(stepNumber) {
-                if (stepNumber) {
-                    currentStep = stepNumber;
-                    showStep(currentStep);
-                }
-            }
+            // function nextStep(stepNumber) {
+            //     if (stepNumber) {
+            //         currentStep = stepNumber;
+            //         showStep(currentStep);
+            //     }
+            // }
 
             function showStep(stepNumber) {
                 document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
@@ -305,9 +327,9 @@
             });
         
              // Function to handle avatar upload and preview
-            function handleAvatarClick() {
-                document.getElementById('avatar-upload').click();
-            }
+            // function handleAvatarClick() {
+            //     document.getElementById('avatar-upload').click();
+            // }
 
             document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
 
@@ -475,28 +497,28 @@
 
 
             // Toggle avatar upload/remove button text
-            function handleAvatarClick() {
-                document.getElementById('avatar-upload').click();
-            }
+            // function handleAvatarClick() {
+            //     document.getElementById('avatar-upload').click();
+            // }
 
-            document.getElementById('avatar-upload').addEventListener('change', function(event) {
-                previewAvatar(event);
-            });
+            // document.getElementById('avatar-upload').addEventListener('change', function(event) {
+            //     previewAvatar(event);
+            // });
 
-            function previewAvatar(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
-                        // Here, you could also upload the avatar to Firebase as needed
-                    };
-                    reader.readAsDataURL(file);
-                }
-            }
+            // function previewAvatar(event) {
+            //     const file = event.target.files[0];
+            //     if (file) {
+            //         const reader = new FileReader();
+            //         reader.onload = function(e) {
+            //             document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
+            //             // Here, you could also upload the avatar to Firebase as needed
+            //         };
+            //         reader.readAsDataURL(file);
+            //     }
+            // }
 
-            document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
-            document.getElementById('avatar-upload').addEventListener('change', previewAvatar);
+            // document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
+            // document.getElementById('avatar-upload').addEventListener('change', previewAvatar);
 
         
             function removeAvatar() {
@@ -506,7 +528,7 @@
             }
         
             // Initialize the first step display
-            showStep(currentStep);
+            showStep(1);
         });
         </script>
         
