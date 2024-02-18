@@ -219,69 +219,129 @@ def onboarding():
     return render_template('onboarding.html', is_new_user=is_new_user)
 
 
-@main.route('/upload_avatar', methods=['POST'])
-def upload_avatar():
-    try:
-        avatar_file = request.files['avatar']
-        if avatar_file:
-            filename = secure_filename(avatar_file.filename)
-            print(f"Received file: {filename}")  # Debugging
+# @main.route('/upload_avatar', methods=['POST'])
+# def upload_avatar():
+#     try:
+#         avatar_file = request.files['avatar']
+#         if avatar_file:
+#             filename = secure_filename(avatar_file.filename)
+#             print(f"Received file: {filename}")  # Debugging
 
-            # Ensure bucket name is specified correctly
-            bucket_name = os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
-            print(f"Bucket name: {bucket_name}")  # Debugging
+#             # Ensure bucket name is specified correctly
+#             bucket_name = os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
+#             print(f"Bucket name: {bucket_name}")  # Debugging
 
-            bucket = storage.bucket(bucket_name, app=firebase_admin.get_app())
-            blob = bucket.blob(f'avatars/{filename}')
+#             bucket = storage.bucket(bucket_name, app=firebase_admin.get_app())
+#             blob = bucket.blob(f'avatars/{filename}')
 
-            blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
-            blob.make_public()
-            avatar_url = blob.public_url
+#             blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
+#             blob.make_public()
+#             avatar_url = blob.public_url
 
-            print(f"Avatar URL: {avatar_url}")  # Debugging
+#             print(f"Avatar URL: {avatar_url}")  # Debugging
 
-            # Update Firestore user document with the avatar URL
-            user_email = session.get('user_email')
-            if user_email:
-                users_ref = db.collection('users')
-                users_ref.document(user_email).update({'avatar': avatar_url})
-                session['user_avatar'] = avatar_url
+#             # Update Firestore user document with the avatar URL
+#             user_email = session.get('user_email')
+#             if user_email:
+#                 users_ref = db.collection('users')
+#                 users_ref.document(user_email).update({'avatar': avatar_url})
+#                 session['user_avatar'] = avatar_url
 
-            return jsonify({'status': 'success', 'avatarURL': avatar_url})
-        else:
-            print("No avatar file provided")  # Debugging
-            return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
-    except Exception as e:
-        print(f"Error in upload_avatar: {e}")  # Debugging
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+#             return jsonify({'status': 'success', 'avatarURL': avatar_url})
+#         else:
+#             print("No avatar file provided")  # Debugging
+#             return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+#     except Exception as e:
+#         print(f"Error in upload_avatar: {e}")  # Debugging
+#         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
     
 
+# @main.route('/save_business_info', methods=['POST'])
+# def save_business_info():
+#     try:
+#         data = request.get_json()
+#         user_email = session.get('user_email')
+#         if not user_email:
+#             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+#         # Save business info to Firestore
+#         users_ref = db.collection('users')
+#         users_ref.document(user_email).update({
+#             'businessName': data['businessName'],
+#             'businessDescription': data['businessDescription']
+#         })
+
+#         # Update session with business name
+#         session['user_business_name'] = data['businessName']
+#         return jsonify({'status': 'success'})
+#     except Exception as e:
+#         logging.error(f"Error saving business info: {e}")
+#         return jsonify({'status': 'error', 'message': 'An error occurred while accessing the database.'}), 500
+
+# @main.route('/save_business_info', methods=['POST'])
+# def save_business_info():
+#     if 'user_email' not in session:
+#         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+#     user_email = session['user_email']
+#     data = request.get_json()
+
+#     try:
+#         # Save business info and avatar URL to Firestore
+#         users_ref = db.collection('users').document(user_email)
+#         users_ref.set({
+#             'businessName': data['businessName'],
+#             'businessDescription': data['businessDescription'],
+#             'avatar': data.get('avatar', ''),  # Optional; save if provided
+#         }, merge=True)
+#         return jsonify({'status': 'success', 'message': 'Business info saved successfully'})
+#     except Exception as e:
+#         logging.error(f"Error saving business info: {e}")
+#         return jsonify({'status': 'error', 'message': 'Failed to save business info.'}), 500
+
 @main.route('/save_business_info', methods=['POST'])
 def save_business_info():
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+    
+    data = request.get_json()
     try:
-        data = request.get_json()
-        user_email = session.get('user_email')
-        if not user_email:
-            return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-
-        # Save business info to Firestore
-        users_ref = db.collection('users')
-        users_ref.document(user_email).update({
+        users_ref = db.collection('users').document(user_email)
+        users_ref.update({
             'businessName': data['businessName'],
-            'businessDescription': data['businessDescription']
+            'businessDescription': data['businessDescription'],
+            # Assuming avatar is saved beforehand and URL is sent as part of the request
+            'avatar': data.get('avatar')
         })
-
-        # Update session with business name
-        session['user_business_name'] = data['businessName']
-        return jsonify({'status': 'success'})
+        return jsonify({'status': 'success', 'message': 'Business info and avatar updated successfully'})
     except Exception as e:
-        logging.error(f"Error saving business info: {e}")
-        return jsonify({'status': 'error', 'message': 'An error occurred while accessing the database.'}), 500
+        return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
 
-
-
+@main.route('/upload_avatar', methods=['POST'])
+def upload_avatar():
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+    
+    avatar_file = request.files.get('avatar')
+    if avatar_file:
+        # Save the file to Firebase Storage
+        bucket = firebase_admin.storage.bucket()
+        blob = bucket.blob(f'avatars/{user_email}/{avatar_file.filename}')
+        blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
+        blob.make_public()
+        
+        # Save the avatar URL in the session or database as needed
+        avatar_url = blob.public_url
+        # Example: Saving the URL in the session for immediate use in the onboarding process
+        session['avatar_url'] = avatar_url
+        
+        return jsonify({'status': 'success', 'avatarURL': avatar_url})
+    else:
+        return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
 
 
 

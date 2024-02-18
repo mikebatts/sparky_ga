@@ -226,19 +226,19 @@
             let currentStep = 1;
             let onboardingData = {};
 
-            document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
-            document.getElementById('closeButton').addEventListener('click', closeOnboarding);
-            document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
-            // Assuming you have buttons with specific IDs for each next step in your HTML
-            document.querySelectorAll('[data-next-step]').forEach(button => {
-                button.addEventListener('click', function() {
-                    const stepTo = parseInt(this.getAttribute('data-next-step'));
-                    nextStep(stepTo);
-                });
-            });
-            document.getElementById('business-info-next').addEventListener('click', saveBusinessInfo);
-            document.getElementById('preferences-next').addEventListener('click', saveGoalsAndPreferences);
-            document.getElementById('notifications-next').addEventListener('click', saveNotificationSettings);
+            // document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
+            // document.getElementById('closeButton').addEventListener('click', closeOnboarding);
+            // document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
+            // // Assuming you have buttons with specific IDs for each next step in your HTML
+            // document.querySelectorAll('[data-next-step]').forEach(button => {
+            //     button.addEventListener('click', function() {
+            //         const stepTo = parseInt(this.getAttribute('data-next-step'));
+            //         nextStep(stepTo);
+            //     });
+            // });
+            // document.getElementById('business-info-next').addEventListener('click', saveBusinessInfo);
+            // document.getElementById('preferences-next').addEventListener('click', saveGoalsAndPreferences);
+            // document.getElementById('notifications-next').addEventListener('click', saveNotificationSettings);
 
 
         
@@ -248,6 +248,33 @@
                     showStep(currentStep);
                 }
             }
+
+            function nextStep(stepNumber) {
+                if (stepNumber) {
+                    showStep(stepNumber);
+                }
+            }
+
+            function showStep(stepNumber) {
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                document.getElementById(`step${stepNumber}`).style.display = 'block';
+                currentStep = stepNumber;
+            }
+
+            document.getElementById('business-info-next').addEventListener('click', function() {
+                onboardingData.businessName = document.getElementById('business-name').value;
+                onboardingData.businessDescription = document.getElementById('business-description').value;
+                // Save business info to the server before proceeding
+                saveBusinessInfo(() => nextStep(3));
+            });
+
+            document.getElementById('preferences-next').addEventListener('click', function() {
+                saveGoalsAndPreferences();
+            });
+
+            document.getElementById('notifications-next').addEventListener('click', function() {
+                saveNotificationSettings();
+            });
 
 
             function closeOnboarding() {
@@ -262,20 +289,6 @@
             }
 
 
-            function nextStep(stepNumber) {
-                if (stepNumber) {
-                    showStep(stepNumber);
-                }
-            }
-        
-            function showStep(stepNumber) {
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                document.getElementById(`step${stepNumber}`).style.display = 'block';
-                currentStep = stepNumber;
-            }
-
-
-
         
             document.querySelectorAll('.onboarding-CTA-container button').forEach(button => {
                 button.addEventListener('click', function() {
@@ -285,15 +298,59 @@
             });
         
      
-           
                     
-            function saveBusinessInfo() {
-                onboardingData.businessName = document.getElementById('business-name').value;
-                onboardingData.businessDescription = document.getElementById('business-description').value;
-                // Optionally: uploadAvatar(); if you want to upload the avatar as soon as it's selected
-                console.log('Business Info Saved:', onboardingData);
-                nextStep(3); // Automatically proceed to the next step after saving
+            function saveBusinessInfo(callback) {
+                // Now includes avatar in the data sent to the server
+                fetch('/save_business_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        businessName: onboardingData.businessName,
+                        businessDescription: onboardingData.businessDescription,
+                        avatar: onboardingData.avatar, // Now includes avatar
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Business info saved successfully.');
+                        if(callback) callback();
+                    } else {
+                        console.error('Failed to save business info.');
+                    }
+                })
+                .catch(error => console.error('Error saving business info:', error));
             }
+
+
+            function uploadAvatar(callback) {
+                const avatarInput = document.getElementById('avatar-upload');
+                if (avatarInput.files.length > 0) {
+                    const formData = new FormData();
+                    formData.append('avatar', avatarInput.files[0]);
+
+                    fetch('/upload_avatar', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            console.log('Avatar uploaded successfully:', data.avatarURL);
+                            onboardingData.avatar = data.avatarURL; // Save avatar URL to onboardingData
+                            if(callback) callback();
+                        } else {
+                            console.error('Failed to upload avatar.');
+                        }
+                    })
+                    .catch(error => console.error('Error uploading avatar:', error));
+                } else if(callback) {
+                    callback(); // Proceed without avatar if not selected
+                }
+            }
+
         
             function saveGoalsAndPreferences() {
                 onboardingData.goals = [...document.getElementById('goalsList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
@@ -332,27 +389,47 @@
                 });
             }
         
-            function uploadAvatar() {
-                const avatarInput = document.getElementById('avatar-upload');
-                if (avatarInput.files.length > 0) {
-                    const fileReader = new FileReader();
-                    fileReader.onloadend = function(e) {
-                        onboardingData.avatar = e.target.result; // Assuming you want to save the Base64 representation
-                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
-                        // Optionally send the avatar to the server here
-                    };
-                    fileReader.readAsDataURL(avatarInput.files[0]);
-                }
-            }
+            // function uploadAvatar() {
+            //     const avatarInput = document.getElementById('avatar-upload');
+            //     if (avatarInput.files.length > 0) {
+            //         const fileReader = new FileReader();
+            //         fileReader.onloadend = function(e) {
+            //             onboardingData.avatar = e.target.result; // Assuming you want to save the Base64 representation
+            //             document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
+            //             // Optionally send the avatar to the server here
+            //         };
+            //         fileReader.readAsDataURL(avatarInput.files[0]);
+            //     }
+            // }
         
             // Initiate avatar upload and preview on file selection
             document.getElementById('avatar-upload').addEventListener('change', function() {
                 const file = this.files[0];
                 if (file) {
-                    uploadAvatar();
+                    // Create FormData and append the file
+                    let formData = new FormData();
+                    formData.append('avatar', file);
+
+                    // POST the file to the backend
+                    fetch('/upload_avatar', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.status === 'success') {
+                            // Update onboardingData with the avatar URL
+                            onboardingData.avatar = data.avatarURL;
+                            // Update the avatar preview
+                            document.getElementById('avatar-placeholder').style.backgroundImage = `url(${data.avatarURL})`;
+                        } else {
+                            console.error('Failed to upload avatar');
+                        }
+                    })
+                    .catch(error => console.error('Error uploading avatar:', error));
                 }
             });
-        
+
             // Toggle avatar upload/remove button text
             function handleAvatarClick() {
                 document.getElementById('avatar-upload').click();
