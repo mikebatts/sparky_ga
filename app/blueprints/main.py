@@ -255,28 +255,35 @@ def onboarding():
 #         print(f"Error in upload_avatar: {e}")  # Debugging
 #         return jsonify({'status': 'error', 'message': str(e)}), 500
 
+
+
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
     logging.info("Starting avatar upload process.")
+    
     if 'user_email' not in session:
         logging.error("User not logged in.")
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
 
-    avatar_file = request.files.get('avatar')
+    if 'avatar' not in request.files:
+        logging.error("No 'avatar' in request.files")
+        return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+
+    avatar_file = request.files['avatar']
     if not avatar_file:
         logging.error("No file uploaded.")
         return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
+    
+    filename = secure_filename(avatar_file.filename)
+    logging.info(f"Received file: {filename}")
 
     try:
-        filename = secure_filename(avatar_file.filename)
-        logging.info(f"Processing file: {filename}")
-        
-        # Assuming firebase_admin.initialize_app is called with the correct parameters
-        bucket = firebase_admin.storage.bucket(app=firebase_admin.get_app())
+        # Assuming firebase_admin.initialize_app is called correctly elsewhere
+        bucket = firebase_admin.storage.bucket()
         blob = bucket.blob(f'avatars/{session["user_email"]}/{filename}')
         
         logging.info("Uploading file to Firebase Storage.")
-        blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
+        blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
         blob.make_public()
         avatar_url = blob.public_url
         logging.info(f"File uploaded successfully: {avatar_url}")
@@ -288,6 +295,7 @@ def upload_avatar():
     except Exception as e:
         logging.error(f"Failed to upload avatar: {e}", exc_info=True)
         return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+
 
 
 
