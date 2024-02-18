@@ -11,7 +11,7 @@ from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 import os
 from app.utils import check_user_session
-
+import traceback
 
 import base64
 import io
@@ -266,14 +266,15 @@ def upload_avatar():
     
     try:
         filename = secure_filename(avatar_file.filename)
-        bucket = firebase_admin.storage.bucket()  # Assumes Firebase Admin is initialized with the correct bucket
-        blob = bucket.blob(f'avatars/{filename}')
-        blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
+        # Firebase Admin is assumed to be initialized globally
+        bucket = firebase_admin.storage.bucket()
+        blob = bucket.blob(f'avatars/{session["user_email"]}/{filename}')
+        blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
         blob.make_public()
         avatar_url = blob.public_url
         
-        user_email = session['user_email']
-        db.collection('users').document(user_email).update({'avatar': avatar_url})
+        # Update Firestore with the avatar URL
+        db.collection('users').document(session['user_email']).update({'avatar': avatar_url})
         
         return jsonify({'status': 'success', 'avatarURL': avatar_url})
     except Exception as e:
