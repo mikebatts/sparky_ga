@@ -49,7 +49,7 @@
                             {% endfor %}
                         {% endif %}
                     {% endwith %}             
-                    <button onclick="nextStep(2)">Get Started</button> <!-- Example for the Get Started button -->
+                    <button onclick="nextStep(2)" data-next-step="2">Get Started</button>
                     <!-- <p class="disclaimer">We currently support Google Analytics 4, <br>with more integrations coming soon.</p> -->
                 </div>
             </div>
@@ -245,6 +245,21 @@
                 currentStep = stepNumber;
                 document.getElementById('onboard-nav-button').style.display = stepNumber === 1 ? 'none' : 'block';
             }
+
+
+            function closeOnboarding() {
+                fetch('/abandon_onboarding', { method: 'GET' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.location.href = "{{ url_for('auth.logout') }}"; // Redirect to login or a specific route
+                        } else {
+                            console.error('Failed to abandon onboarding:', data.message);
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+            }
+
         
             document.querySelectorAll('.onboarding-CTA-container button').forEach(button => {
                 button.addEventListener('click', function() {
@@ -277,19 +292,7 @@
                 }
             }
 
-            function closeOnboarding() {
-                // Call the server to abandon onboarding and delete the user document
-                fetch('/abandon_onboarding', { method: 'GET' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.status === 'success') {
-                            window.location.href = "{{ url_for('auth.logout') }}"; // Redirect to login or a specific route
-                        } else {
-                            console.error('Failed to abandon onboarding:', data.message);
-                        }
-                    })
-                    .catch(error => console.error('Error:', error));
-            }
+           
                     
             function saveBusinessInfo() {
                 onboardingData.businessName = document.getElementById('business-name').value;
