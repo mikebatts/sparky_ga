@@ -198,6 +198,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace(); // Initialize icons
+           
             
         
             // Initialize sortable lists
@@ -228,6 +229,20 @@
             let onboardingData = {};
 
             // Navigation functions
+            function showStep(stepNumber) {
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                let stepElement = document.getElementById(`step${stepNumber}`);
+                if(stepElement) stepElement.style.display = 'block';
+                else console.error("Step element not found:", `step${stepNumber}`);
+            }
+
+            // Fix for navigation functions
+            window.goToPreviousStep = goToPreviousStep;
+            window.nextStep = nextStep;
+            window.closeOnboarding = closeOnboarding;
+            window.handleAvatarClick = handleAvatarClick;
+            window.previewAvatar = previewAvatar;
+
             function goToPreviousStep() {
                 if (currentStep > 1) {
                     currentStep--;
@@ -240,16 +255,17 @@
                 showStep(currentStep);
             }
 
-            function showStep(stepNumber) {
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                document.getElementById(`step${stepNumber}`).style.display = 'block';
+            function closeOnboarding() {
+                fetch('/abandon_onboarding').then(() => {
+                    window.location.href = "{{ url_for('auth.logout') }}";
+                }).catch(error => console.error('Error:', error));
             }
 
-            window.handleAvatarClick = function() {
+            function handleAvatarClick() {
                 document.getElementById('avatar-upload').click();
-            };
+            }
 
-            window.previewAvatar = function(event) {
+            function previewAvatar(event) {
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
@@ -258,7 +274,8 @@
                     };
                     reader.readAsDataURL(file);
                 }
-            };
+            }
+
 
             // document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
             // document.getElementById('closeButton').addEventListener('click', closeOnboarding);
@@ -275,26 +292,7 @@
             // document.getElementById('notifications-next').addEventListener('click', saveNotificationSettings);
 
             // Attach event listeners
-            document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
-            document.getElementById('avatar-upload').addEventListener('change', function(event) {
-                const file = this.files[0];
-                if (file) {
-                    const formData = new FormData();
-                    formData.append('avatar', file);
-                    fetch('/upload_avatar', {
-                        method: 'POST',
-                        body: formData,
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            onboardingData.avatar = data.avatarURL;
-                            document.getElementById('avatar-placeholder').style.backgroundImage = `url(${data.avatarURL})`;
-                        }
-                    })
-                    .catch(error => console.error('Error uploading avatar:', error));
-                }
-            });
+      
 
             document.getElementById('business-info-next').addEventListener('click', function() {
                 onboardingData.businessName = document.getElementById('business-name').value;
@@ -316,30 +314,6 @@
 
 
         
-            // Navigation functions
-            function goToPreviousStep() {
-                if (currentStep > 1) {
-                    currentStep--;
-                    showStep(currentStep);
-                }
-            }
-
-            // function nextStep(stepNumber) {
-            //     if (stepNumber) {
-            //         currentStep = stepNumber;
-            //         showStep(currentStep);
-            //     }
-            // }
-
-            function showStep(stepNumber) {
-                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
-                document.getElementById(`step${stepNumber}`).style.display = 'block';
-            }
-
-            function closeOnboarding() {
-                window.location.href = "{{ url_for('auth.logout') }}"; // Or another appropriate action
-            }
-
        
 
         
@@ -357,53 +331,56 @@
 
             // document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
 
+            // Fix for avatar upload issues
             document.getElementById('avatar-upload').addEventListener('change', function(event) {
                 const file = this.files[0];
                 if (file) {
-                    // Prepare and send the file to your server
-                    const formData = new FormData();
+                    let formData = new FormData();
                     formData.append('avatar', file);
                     fetch('/upload_avatar', {
                         method: 'POST',
                         body: formData,
-                    })
-                    .then(response => response.json())
+                    }).then(response => response.json())
                     .then(data => {
                         if(data.status === 'success') {
                             onboardingData.avatar = data.avatarURL;
                             document.getElementById('avatar-placeholder').style.backgroundImage = `url(${data.avatarURL})`;
+                        } else {
+                            console.error('Failed to upload avatar');
                         }
-                    })
-                    .catch(error => console.error('Error uploading avatar:', error));
+                    }).catch(error => console.error('Error uploading avatar:', error));
                 }
             });
 
+            showStep(currentStep); // Initialize the first step display
+        
 
-            function uploadAvatar(callback) {
-                const avatarInput = document.getElementById('avatar-upload');
-                if (avatarInput.files.length > 0) {
-                    const formData = new FormData();
-                    formData.append('avatar', avatarInput.files[0]);
 
-                    fetch('/upload_avatar', {
-                        method: 'POST',
-                        body: formData,
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === 'success') {
-                            console.log('Avatar uploaded successfully:', data.avatarURL);
-                            onboardingData.avatar = data.avatarURL; // Save avatar URL to onboardingData
-                            if(callback) callback();
-                        } else {
-                            console.error('Failed to upload avatar.');
-                        }
-                    })
-                    .catch(error => console.error('Error uploading avatar:', error));
-                } else if(callback) {
-                    callback(); // Proceed without avatar if not selected
-                }
-            }
+            // function uploadAvatar(callback) {
+            //     const avatarInput = document.getElementById('avatar-upload');
+            //     if (avatarInput.files.length > 0) {
+            //         const formData = new FormData();
+            //         formData.append('avatar', avatarInput.files[0]);
+
+            //         fetch('/upload_avatar', {
+            //             method: 'POST',
+            //             body: formData,
+            //         })
+            //         .then(response => response.json())
+            //         .then(data => {
+            //             if (data.status === 'success') {
+            //                 console.log('Avatar uploaded successfully:', data.avatarURL);
+            //                 onboardingData.avatar = data.avatarURL; // Save avatar URL to onboardingData
+            //                 if(callback) callback();
+            //             } else {
+            //                 console.error('Failed to upload avatar.');
+            //             }
+            //         })
+            //         .catch(error => console.error('Error uploading avatar:', error));
+            //     } else if(callback) {
+            //         callback(); // Proceed without avatar if not selected
+            //     }
+            // }
 
 
             // Functions to save business info, goals, preferences, and notification settings
@@ -476,37 +453,37 @@
             
         
             // Initiate avatar upload and preview on file selection
-            document.getElementById('avatar-upload').addEventListener('change', function(event) {
-                const file = this.files[0];
-                if (file) {
-                    // Check if the selected file is an image
-                    if (!file.type.startsWith('image/')) {
-                        alert('Please select an image file.');
-                        return; // Stop the function if the file is not an image
-                    }
+            // document.getElementById('avatar-upload').addEventListener('change', function(event) {
+            //     const file = this.files[0];
+            //     if (file) {
+            //         // Check if the selected file is an image
+            //         if (!file.type.startsWith('image/')) {
+            //             alert('Please select an image file.');
+            //             return; // Stop the function if the file is not an image
+            //         }
 
-                    // Proceed with the existing code if the file is an image
-                    let formData = new FormData();
-                    formData.append('avatar', file);
+            //         // Proceed with the existing code if the file is an image
+            //         let formData = new FormData();
+            //         formData.append('avatar', file);
 
-                    fetch('/upload_avatar', {
-                        method: 'POST',
-                        body: formData,
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.status === 'success') {
-                            // Update onboardingData with the avatar URL
-                            onboardingData.avatar = data.avatarURL;
-                            // Update the avatar preview
-                            document.getElementById('avatar-placeholder').style.backgroundImage = `url(${data.avatarURL})`;
-                        } else {
-                            console.error('Failed to upload avatar');
-                        }
-                    })
-                    .catch(error => console.error('Error uploading avatar:', error));
-                }
-            });
+            //         fetch('/upload_avatar', {
+            //             method: 'POST',
+            //             body: formData,
+            //         })
+            //         .then(response => response.json())
+            //         .then(data => {
+            //             if(data.status === 'success') {
+            //                 // Update onboardingData with the avatar URL
+            //                 onboardingData.avatar = data.avatarURL;
+            //                 // Update the avatar preview
+            //                 document.getElementById('avatar-placeholder').style.backgroundImage = `url(${data.avatarURL})`;
+            //             } else {
+            //                 console.error('Failed to upload avatar');
+            //             }
+            //         })
+            //         .catch(error => console.error('Error uploading avatar:', error));
+            //     }
+            // });
 
         
             function removeAvatar() {

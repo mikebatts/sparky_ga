@@ -257,7 +257,6 @@ def onboarding():
 
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
-    # Ensure the user is logged in
     if 'user_email' not in session:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
     
@@ -268,13 +267,14 @@ def upload_avatar():
     try:
         filename = secure_filename(avatar_file.filename)
         bucket_name = current_app.config['FIREBASE_STORAGE_BUCKET']
+        if not firebase_admin._apps:
+            firebase_admin.initialize_app()
         bucket = firebase_admin.storage.bucket(bucket_name)
         blob = bucket.blob(f'avatars/{filename}')
         blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
         blob.make_public()
         avatar_url = blob.public_url
         
-        # Update the user's document with the new avatar URL
         user_email = session['user_email']
         db.collection('users').document(user_email).update({'avatar': avatar_url})
         
@@ -282,6 +282,7 @@ def upload_avatar():
     except Exception as e:
         current_app.logger.error(f"Failed to upload avatar: {e}")
         return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+
 
 
     
