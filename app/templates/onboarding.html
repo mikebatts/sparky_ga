@@ -227,11 +227,23 @@
             let currentStep = 1;
             let onboardingData = {};
 
-            // Define functions in the global scope
-            window.nextStep = function(stepNumber) {
+            // Navigation functions
+            function goToPreviousStep() {
+                if (currentStep > 1) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            }
+
+            function nextStep(stepNumber) {
                 currentStep = stepNumber;
                 showStep(currentStep);
-            };
+            }
+
+            function showStep(stepNumber) {
+                document.querySelectorAll('.modal-step').forEach(step => step.style.display = 'none');
+                document.getElementById(`step${stepNumber}`).style.display = 'block';
+            }
 
             window.handleAvatarClick = function() {
                 document.getElementById('avatar-upload').click();
@@ -262,32 +274,44 @@
             // document.getElementById('preferences-next').addEventListener('click', saveGoalsAndPreferences);
             // document.getElementById('notifications-next').addEventListener('click', saveNotificationSettings);
 
+            // Attach event listeners
             document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
-            document.getElementById('closeButton').addEventListener('click', function() {
-                fetch('/abandon_onboarding')
-                .then(response => {
-                    if(response.ok) {
-                        window.location.href = "{{ url_for('auth.logout') }}";
-                    } else {
-                        console.error('Failed to abandon onboarding and delete user data.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
+            document.getElementById('avatar-upload').addEventListener('change', function(event) {
+                const file = this.files[0];
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('avatar', file);
+                    fetch('/upload_avatar', {
+                        method: 'POST',
+                        body: formData,
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            onboardingData.avatar = data.avatarURL;
+                            document.getElementById('avatar-placeholder').style.backgroundImage = `url(${data.avatarURL})`;
+                        }
+                    })
+                    .catch(error => console.error('Error uploading avatar:', error));
+                }
             });
+
             document.getElementById('business-info-next').addEventListener('click', function() {
-                // Collect business info data
                 onboardingData.businessName = document.getElementById('business-name').value;
                 onboardingData.businessDescription = document.getElementById('business-description').value;
-                // Save business info and move to the next step
+                // Add the avatar URL if it has been uploaded
+                if (onboardingData.avatar) {
+                    onboardingData.avatar = onboardingData.avatar;
+                }
                 saveBusinessInfo(() => nextStep(3));
             });
 
             document.getElementById('preferences-next').addEventListener('click', function() {
-                saveGoalsAndPreferences(() => nextStep(5)); // Proceed to notifications step
+                saveGoalsAndPreferences(() => nextStep(5));
             });
 
             document.getElementById('notifications-next').addEventListener('click', function() {
-                saveNotificationSettings(() => nextStep(6)); // Proceed to the final confirmation step
+                saveNotificationSettings(() => nextStep(6));
             });
 
 
@@ -331,7 +355,7 @@
             //     document.getElementById('avatar-upload').click();
             // }
 
-            document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
+            // document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
 
             document.getElementById('avatar-upload').addEventListener('change', function(event) {
                 const file = this.files[0];
@@ -449,18 +473,7 @@
                 });
             }
         
-            // function uploadAvatar() {
-            //     const avatarInput = document.getElementById('avatar-upload');
-            //     if (avatarInput.files.length > 0) {
-            //         const fileReader = new FileReader();
-            //         fileReader.onloadend = function(e) {
-            //             onboardingData.avatar = e.target.result; // Assuming you want to save the Base64 representation
-            //             document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
-            //             // Optionally send the avatar to the server here
-            //         };
-            //         fileReader.readAsDataURL(avatarInput.files[0]);
-            //     }
-            // }
+            
         
             // Initiate avatar upload and preview on file selection
             document.getElementById('avatar-upload').addEventListener('change', function(event) {
@@ -494,31 +507,6 @@
                     .catch(error => console.error('Error uploading avatar:', error));
                 }
             });
-
-
-            // Toggle avatar upload/remove button text
-            // function handleAvatarClick() {
-            //     document.getElementById('avatar-upload').click();
-            // }
-
-            // document.getElementById('avatar-upload').addEventListener('change', function(event) {
-            //     previewAvatar(event);
-            // });
-
-            // function previewAvatar(event) {
-            //     const file = event.target.files[0];
-            //     if (file) {
-            //         const reader = new FileReader();
-            //         reader.onload = function(e) {
-            //             document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
-            //             // Here, you could also upload the avatar to Firebase as needed
-            //         };
-            //         reader.readAsDataURL(file);
-            //     }
-            // }
-
-            // document.getElementById('avatar-button').addEventListener('click', handleAvatarClick);
-            // document.getElementById('avatar-upload').addEventListener('change', previewAvatar);
 
         
             function removeAvatar() {

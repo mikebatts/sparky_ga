@@ -257,27 +257,32 @@ def onboarding():
 
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
+    # Ensure the user is logged in
     if 'user_email' not in session:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+    
+    avatar_file = request.files.get('avatar')
+    if not avatar_file:
+        return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
+    
     try:
-        avatar_file = request.files.get('avatar')
-        if avatar_file:
-            filename = secure_filename(avatar_file.filename)
-            # Assuming FIREBASE_STORAGE_BUCKET is like 'sparky-408720.appspot.com'
-            bucket_name = current_app.config['FIREBASE_STORAGE_BUCKET']
-            bucket = storage.bucket(bucket_name)
-            blob = bucket.blob(f'avatars/{filename}')
-            blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
-            blob.make_public()
-            avatar_url = blob.public_url
-            # Update Firestore user document with the avatar URL
-            user_email = session['user_email']
-            db.collection('users').document(user_email).update({'avatar': avatar_url})
-            return jsonify({'status': 'success', 'avatarURL': avatar_url})
-        else:
-            return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
+        filename = secure_filename(avatar_file.filename)
+        bucket_name = current_app.config['FIREBASE_STORAGE_BUCKET']
+        bucket = firebase_admin.storage.bucket(bucket_name)
+        blob = bucket.blob(f'avatars/{filename}')
+        blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
+        blob.make_public()
+        avatar_url = blob.public_url
+        
+        # Update the user's document with the new avatar URL
+        user_email = session['user_email']
+        db.collection('users').document(user_email).update({'avatar': avatar_url})
+        
+        return jsonify({'status': 'success', 'avatarURL': avatar_url})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+        current_app.logger.error(f"Failed to upload avatar: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+
 
     
 
