@@ -6,7 +6,7 @@ from google.oauth2 import credentials as google_credentials
 from app.utils import is_credentials_valid
 from app.database import db  # Make sure this is correctly imported
 import firebase_admin
-from firebase_admin import storage 
+from firebase_admin import credentials, storage 
 from google.analytics.admin import AnalyticsAdminServiceClient
 from google.analytics.admin_v1alpha.types import ListAccountSummariesRequest
 import os
@@ -265,16 +265,19 @@ def upload_avatar():
         return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
     
     try:
-        filename = secure_filename(avatar_file.filename)
-        bucket_name = current_app.config['FIREBASE_STORAGE_BUCKET']
+        # Ensure Firebase Admin is initialized
         if not firebase_admin._apps:
-            firebase_admin.initialize_app()
-        bucket = firebase_admin.storage.bucket(bucket_name)
+            cred = credentials.Certificate('/Users/michaelbattaglia/sparky_ga/secret/sparky-fb.json')
+            firebase_admin.initialize_app(cred, {'storageBucket': 'sparky-408720.appspot.com'})
+            
+        filename = secure_filename(avatar_file.filename)
+        bucket = firebase_admin.storage.bucket()  # This uses the default bucket configured during SDK initialization
         blob = bucket.blob(f'avatars/{filename}')
         blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
         blob.make_public()
         avatar_url = blob.public_url
         
+        # Update Firestore document
         user_email = session['user_email']
         db.collection('users').document(user_email).update({'avatar': avatar_url})
         
