@@ -257,29 +257,38 @@ def onboarding():
 
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
+    logging.info("Starting avatar upload process.")
     if 'user_email' not in session:
+        logging.error("User not logged in.")
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-    
+
     avatar_file = request.files.get('avatar')
     if not avatar_file:
+        logging.error("No file uploaded.")
         return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
-    
+
     try:
         filename = secure_filename(avatar_file.filename)
-        # Firebase Admin is assumed to be initialized globally
-        bucket = firebase_admin.storage.bucket()
+        logging.info(f"Processing file: {filename}")
+        
+        # Assuming firebase_admin.initialize_app is called with the correct parameters
+        bucket = firebase_admin.storage.bucket(app=firebase_admin.get_app())
         blob = bucket.blob(f'avatars/{session["user_email"]}/{filename}')
+        
+        logging.info("Uploading file to Firebase Storage.")
         blob.upload_from_file(avatar_file.stream, content_type=avatar_file.content_type)
         blob.make_public()
         avatar_url = blob.public_url
-        
-        # Update Firestore with the avatar URL
+        logging.info(f"File uploaded successfully: {avatar_url}")
+
         db.collection('users').document(session['user_email']).update({'avatar': avatar_url})
+        logging.info("Firestore document updated with avatar URL.")
         
         return jsonify({'status': 'success', 'avatarURL': avatar_url})
     except Exception as e:
-        current_app.logger.error(f"Failed to upload avatar: {e}")
+        logging.error(f"Failed to upload avatar: {e}", exc_info=True)
         return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+
 
 
 
