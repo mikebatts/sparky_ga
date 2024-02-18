@@ -265,19 +265,13 @@ def upload_avatar():
         return jsonify({'status': 'error', 'message': 'No file uploaded'}), 400
     
     try:
-        # Ensure Firebase Admin is initialized
-        if not firebase_admin._apps:
-            cred = credentials.Certificate('/Users/michaelbattaglia/sparky_ga/secret/sparky-fb.json')
-            firebase_admin.initialize_app(cred, {'storageBucket': 'sparky-408720.appspot.com'})
-            
         filename = secure_filename(avatar_file.filename)
-        bucket = firebase_admin.storage.bucket()  # This uses the default bucket configured during SDK initialization
+        bucket = firebase_admin.storage.bucket()  # Assumes Firebase Admin is initialized with the correct bucket
         blob = bucket.blob(f'avatars/{filename}')
         blob.upload_from_file(avatar_file, content_type=avatar_file.content_type)
         blob.make_public()
         avatar_url = blob.public_url
         
-        # Update Firestore document
         user_email = session['user_email']
         db.collection('users').document(user_email).update({'avatar': avatar_url})
         
@@ -285,6 +279,7 @@ def upload_avatar():
     except Exception as e:
         current_app.logger.error(f"Failed to upload avatar: {e}")
         return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+
 
 
 
