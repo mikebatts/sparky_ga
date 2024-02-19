@@ -237,12 +237,6 @@
             }
 
             // Fix for navigation functions
-            window.goToPreviousStep = goToPreviousStep;
-            window.nextStep = nextStep;
-            window.closeOnboarding = closeOnboarding;
-            window.handleAvatarClick = handleAvatarClick;
-            window.previewAvatar = previewAvatar;
-
             function goToPreviousStep() {
                 if (currentStep > 1) {
                     currentStep--;
@@ -256,10 +250,15 @@
             }
 
             function closeOnboarding() {
-                fetch('/abandon_onboarding').then(() => {
-                    window.location.href = "{{ url_for('auth.logout') }}";
+                fetch('/abandon_onboarding', {
+                    method: 'GET'
+                }).then(() => {
+                    window.location.href = "/"; // Redirect to login page
                 }).catch(error => console.error('Error:', error));
             }
+
+            document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
+            document.getElementById('closeButton').addEventListener('click', closeOnboarding);
 
             function handleAvatarClick() {
                 document.getElementById('avatar-upload').click();
@@ -320,7 +319,7 @@
             document.querySelectorAll('.onboarding-CTA-container button').forEach(button => {
                 button.addEventListener('click', function() {
                     const stepTo = parseInt(this.getAttribute('data-next-step'));
-                    nextStep(stepTo);
+                    if(stepTo) nextStep(parseInt(stepTo));
                 });
             });
         
