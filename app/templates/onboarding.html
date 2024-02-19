@@ -250,6 +250,17 @@
                 showStep(currentStep);
             };
 
+            function previewAvatar(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
             function closeOnboarding() {
                 fetch('/abandon_onboarding', {
                     method: 'GET'
@@ -273,16 +284,7 @@
 
             
 
-            function previewAvatar(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        document.getElementById('avatar-placeholder').style.backgroundImage = `url(${e.target.result})`;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            }
+        
 
 
             // document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
