@@ -110,7 +110,7 @@
                         </ul>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <button onclick="nextStep(4)">Next</button>
+                        <button onclick="saveGoalsAndProceed()" id="goals-next-button">Next</button>
                     </div>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                         </ul>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <button id="preferences-next">Next</button>
+                        <button onclick="nextStep(4)" id="preferences-next-button">Next</button>
                     </div>
                 </div>
             </div>
@@ -312,6 +312,20 @@
                 saveBusinessInfo(() => nextStep(3));
             });
 
+
+            function saveGoalsAndProceed() {
+                const goals = Array.from(document.getElementById('goalsList').querySelectorAll('.draggable-item'))
+                                    .map((item, index) => item.textContent.trim());
+
+                // Assuming you have a way to save these goals, like updating onboardingData or sending to the server
+                onboardingData.goals = goals;
+                
+                // Proceed to Preferences Step
+                nextStep(4); // Adjust step number as needed
+            }
+
+
+
             document.getElementById('preferences-next').addEventListener('click', function() {
                 saveGoalsAndPreferences(() => nextStep(5));
             });
@@ -418,11 +432,42 @@
             }
 
         
-            function saveGoalsAndPreferences() {
-                onboardingData.goals = [...document.getElementById('goalsList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
-                onboardingData.preferences = [...document.getElementById('preferencesList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
-                nextStep(5); // Proceed to next step after saving
+            // function saveGoalsAndPreferences() {
+            //     onboardingData.goals = [...document.getElementById('goalsList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
+            //     onboardingData.preferences = [...document.getElementById('preferencesList').querySelectorAll('.draggable-item')].map((item, index) => item.textContent.trim());
+            //     nextStep(5); // Proceed to next step after saving
+            // }
+
+            function saveGoalsAndPreferences(callback) {
+                const goals = Array.from(document.getElementById('goalsList').querySelectorAll('.draggable-item'))
+                                .map((item, index) => ({ rank: index + 1, goal: item.textContent.trim().split(" ")[1] }));
+                const preferences = Array.from(document.getElementById('preferencesList').querySelectorAll('.draggable-item'))
+                                        .map((item, index) => ({ rank: index + 1, preference: item.textContent.trim().split(" ")[1] }));
+
+                fetch('/update_onboarding_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ goals, preferences }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Goals and preferences saved successfully.');
+                        if(callback) callback(); // Proceed to next step
+                    } else {
+                        console.error('Failed to save goals and preferences.');
+                    }
+                })
+                .catch(error => console.error('Error saving goals and preferences:', error));
             }
+
+            // Adjust button event listener if needed
+            document.getElementById('preferences-next-button').addEventListener('click', function() {
+                saveGoalsAndPreferences(() => nextStep(5));
+            });
+
         
             function saveNotificationSettings() {
                 onboardingData.reportFrequency = [];

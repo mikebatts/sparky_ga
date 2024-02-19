@@ -209,6 +209,28 @@ def update_complete_profile():
         return jsonify({'status': 'error', 'message': 'Failed to update profile. Error: {}'.format(e)}), 500
 
 
+@main.route('/update_onboarding_info', methods=['POST'])
+def update_onboarding_info():
+    if 'user_email' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+    
+    user_email = session['user_email']
+    data = request.json  # This contains your goals and preferences
+    
+    try:
+        # Assuming 'goals' and 'preferences' are lists
+        goals = data.get('goals', [])
+        preferences = data.get('preferences', [])
+        
+        user_ref = db.collection('users').document(user_email)
+        user_ref.update({
+            'goals': goals,
+            'preferences': preferences
+        })
+        
+        return jsonify({'status': 'success', 'message': 'Onboarding information updated successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to update onboarding information'}), 500
 
 
 
@@ -368,20 +390,23 @@ def save_business_info():
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
     
     user_email = session['user_email']
-    data = request.json
+    data = request.json  # Ensure this is correctly parsing JSON body
+
+    if not data.get('businessName'):  # Check if businessName is provided
+        return jsonify({'status': 'error', 'message': 'Business name is required'}), 400
 
     try:
-        # Assuming a Firestore setup; adjust according to your database
         user_ref = db.collection('users').document(user_email)
         user_ref.update({
             'businessName': data['businessName'],
-            'businessDescription': data['businessDescription'],
+            'businessDescription': data.get('businessDescription', ''),
             'avatar': data.get('avatar', '')
         })
         return jsonify({'status': 'success', 'message': 'Business info saved successfully'})
     except Exception as e:
-        print(f"Failed to save business info: {e}")  # Log the error
-        return jsonify({'status': 'error', 'message': 'Failed to save business info.'}), 500
+        logging.error(f"Failed to save business info: {e}")
+        return jsonify({'status': 'error', 'message': 'Failed to save business info'}), 500
+
 
 
 
