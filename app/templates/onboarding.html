@@ -245,10 +245,10 @@
                 }
             }
 
-            function nextStep(stepNumber) {
+            window.nextStep = function(stepNumber) {
                 currentStep = stepNumber;
                 showStep(currentStep);
-            }
+            };
 
             function closeOnboarding() {
                 fetch('/abandon_onboarding', {
