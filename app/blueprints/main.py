@@ -209,28 +209,6 @@ def update_complete_profile():
         return jsonify({'status': 'error', 'message': 'Failed to update profile. Error: {}'.format(e)}), 500
 
 
-@main.route('/update_onboarding_info', methods=['POST'])
-def update_onboarding_info():
-    if 'user_email' not in session:
-        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-    
-    user_email = session['user_email']
-    data = request.json  # This contains your goals and preferences
-    
-    try:
-        # Assuming 'goals' and 'preferences' are lists
-        goals = data.get('goals', [])
-        preferences = data.get('preferences', [])
-        
-        user_ref = db.collection('users').document(user_email)
-        user_ref.update({
-            'goals': goals,
-            'preferences': preferences
-        })
-        
-        return jsonify({'status': 'success', 'message': 'Onboarding information updated successfully'})
-    except Exception as e:
-        return jsonify({'status': 'error', 'message': 'Failed to update onboarding information'}), 500
 
 
 

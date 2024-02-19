@@ -110,7 +110,7 @@
                         </ul>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <button onclick="saveGoalsAndProceed()" id="goals-next-button">Next</button>
+                        <button onclick="nextStep(4)">Next</button>
                     </div>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                         </ul>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <button onclick="nextStep(4)" id="preferences-next-button">Next</button>
+                        <button onclick="nextStep(5)" id="preferences-next-button">Next</button>
                     </div>
                 </div>
             </div>
@@ -311,20 +311,6 @@
                 }
                 saveBusinessInfo(() => nextStep(3));
             });
-
-
-            function saveGoalsAndProceed() {
-                const goals = Array.from(document.getElementById('goalsList').querySelectorAll('.draggable-item'))
-                                    .map((item, index) => item.textContent.trim());
-
-                // Assuming you have a way to save these goals, like updating onboardingData or sending to the server
-                onboardingData.goals = goals;
-                
-                // Proceed to Preferences Step
-                nextStep(4); // Adjust step number as needed
-            }
-
-
 
             document.getElementById('preferences-next').addEventListener('click', function() {
                 saveGoalsAndPreferences(() => nextStep(5));
