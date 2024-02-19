@@ -12,14 +12,6 @@
 # from firebase_admin import credentials, initialize_app
 
 
-# cred_path = os.getenv('FIREBASE_CREDENTIALS')
-# storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
-# cred = credentials.Certificate(cred_path)
-# if not firebase_admin._apps:
-#     firebase_admin.initialize_app(cred, {
-#         'storageBucket': storage_bucket.replace('gs://', '')
-#     })
-
 
 
 # os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -42,6 +34,14 @@ from app.blueprints.reports import reports
 from app.blueprints.main import main
 from app.config import FLASK_APP_SECRET_KEY
 import os
+
+cred_path = os.getenv('FIREBASE_CREDENTIALS')
+storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
+cred = credentials.Certificate(cred_path)
+if not firebase_admin._apps:
+    firebase_admin.initialize_app(cred, {
+        'storageBucket': storage_bucket.replace('gs://', '')
+    })
 
 # Ensure the OAUTHLIB_INSECURE_TRANSPORT environment variable is set to '1'
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
