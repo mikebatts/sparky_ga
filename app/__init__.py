@@ -32,6 +32,8 @@ from app.blueprints.auth import auth
 from app.blueprints.analytics import analytics
 from app.blueprints.reports import reports
 from app.blueprints.main import main
+import firebase_admin
+from firebase_admin import credentials, storage, firestore
 from app.config import FLASK_APP_SECRET_KEY
 import os
 
