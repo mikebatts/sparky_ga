@@ -37,13 +37,16 @@ from firebase_admin import credentials, storage, firestore
 from app.config import FLASK_APP_SECRET_KEY
 import os
 
-cred_path = os.getenv('FIREBASE_CREDENTIALS')
-storage_bucket = os.getenv('FIREBASE_STORAGE_BUCKET')
-cred = credentials.Certificate(cred_path)
-if not firebase_admin._apps:
+# Decode Firebase credentials from the base64 environment variable
+encoded_credentials = os.getenv('FIREBASE_CREDENTIALS_BASE64')
+if encoded_credentials:
+    cred_json = json.loads(base64.b64decode(encoded_credentials).decode('utf-8'))
+    cred = credentials.Certificate(cred_json)
     firebase_admin.initialize_app(cred, {
-        'storageBucket': storage_bucket.replace('gs://', '')
+        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
     })
+else:
+    raise ValueError("The FIREBASE_CREDENTIALS_BASE64 environment variable is not set.")
 
 # Ensure the OAUTHLIB_INSECURE_TRANSPORT environment variable is set to '1'
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
