@@ -44,9 +44,11 @@ encoded_credentials = os.getenv('FIREBASE_CREDENTIALS_BASE64')
 if encoded_credentials:
     cred_json = json.loads(base64.b64decode(encoded_credentials).decode('utf-8'))
     cred = credentials.Certificate(cred_json)
-    firebase_admin.initialize_app(cred, {
-        'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
-    })
+    # Check if Firebase app has already been initialized
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred, {
+            'storageBucket': os.getenv('FIREBASE_STORAGE_BUCKET').replace('gs://', '')
+        })
 else:
     raise ValueError("The FIREBASE_CREDENTIALS_BASE64 environment variable is not set.")
 
