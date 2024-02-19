@@ -196,6 +196,11 @@
     </div>
 
     <script>
+
+        // function handleAvatarClick() {
+        //                 document.getElementById('avatar-upload').click();
+        //             }
+
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace(); // Initialize icons
            
@@ -259,10 +264,12 @@
 
             document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
             document.getElementById('closeButton').addEventListener('click', closeOnboarding);
+            document.getElementById('avatar-button').addEventListener('click', () => handleAvatarClick());
+            document.getElementById('business-info-next').addEventListener('click', () => saveBusinessInfo(() => nextStep(3)));
+            document.getElementById('preferences-next').addEventListener('click', () => saveGoalsAndPreferences());
+            document.getElementById('notifications-next').addEventListener('click', () => saveNotificationSettings());
 
-            function handleAvatarClick() {
-                document.getElementById('avatar-upload').click();
-            }
+            
 
             function previewAvatar(event) {
                 const file = event.target.files[0];
