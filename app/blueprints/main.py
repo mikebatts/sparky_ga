@@ -256,42 +256,41 @@ def onboarding():
 #         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
-
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
-    logging.info("Starting simplified avatar upload process.")
+    logging.info("Starting avatar upload process.")
     if 'avatar' not in request.files:
-        logging.error("No 'avatar' in request.files - Simplified Test")
-        return jsonify({'status': 'error', 'message': 'No avatar file provided - Simplified Test'}), 400
+        logging.error("No 'avatar' in request.files")
+        return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
     
     avatar_file = request.files['avatar']
     if avatar_file.filename == '':
-        logging.error("No file selected for uploading - Simplified Test")
-        return jsonify({'status': 'error', 'message': 'No file selected for uploading - Simplified Test'}), 400
+        logging.error("No file selected for uploading")
+        return jsonify({'status': 'error', 'message': 'No file selected for uploading'}), 400
     
     try:
         filename = secure_filename(avatar_file.filename)
-        logging.info(f"Attempting to upload file: {filename} - Simplified Test")
-        # Directly use an in-memory file stream to avoid temporary file storage issues
+        logging.info(f"Attempting to upload file: {filename}")
         in_memory_file = io.BytesIO()
         avatar_file.save(in_memory_file)
         in_memory_file.seek(0)  # Important: move to the start of the BytesIO object!
         
-        # Use a try-except block inside the existing try-except to pinpoint Firebase issues
         try:
-            bucket = firebase_admin.storage.bucket()
+            # Specify the bucket name explicitly during the upload
+            bucket_name = 'sparky-408720.appspot.com'  # Directly using the bucket name from your environment configuration
+            bucket = firebase_admin.storage.bucket(bucket_name)
             blob = bucket.blob(f'avatars/{session.get("user_email", "unknown_user")}/{filename}')
             blob.upload_from_file(in_memory_file, content_type=avatar_file.content_type)
             blob.make_public()
             avatar_url = blob.public_url
-            logging.info(f"File uploaded successfully to: {avatar_url} - Simplified Test")
+            logging.info(f"File uploaded successfully to: {avatar_url}")
             return jsonify({'status': 'success', 'avatarURL': avatar_url})
         except Exception as firebase_error:
             logging.error(f"Firebase upload error: {firebase_error}", exc_info=True)
-            return jsonify({'status': 'error', 'message': 'Firebase upload failed - Simplified Test'}), 500
+            return jsonify({'status': 'error', 'message': 'Firebase upload failed'}), 500
     except Exception as e:
-        logging.error(f"General error in simplified upload: {e}", exc_info=True)
-        return jsonify({'status': 'error', 'message': 'Failed to upload avatar - Simplified Test'}), 500
+        logging.error(f"General error in upload: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
 
 
 
