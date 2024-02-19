@@ -342,27 +342,46 @@ def upload_avatar():
 #         logging.error(f"Error saving business info: {e}")
 #         return jsonify({'status': 'error', 'message': 'Failed to save business info.'}), 500
 
+# @main.route('/save_business_info', methods=['POST'])
+# def save_business_info():
+#     user_email = session.get('user_email')
+#     if not user_email:
+#         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+    
+#     data = request.get_json()
+#     try:
+#         users_ref = db.collection('users').document(user_email)
+#         users_ref.update({
+#             'businessName': data['businessName'],
+#             'businessDescription': data['businessDescription'],
+#             # Assuming avatar is saved beforehand and URL is sent as part of the request
+#             'avatar': data.get('avatar')
+#         })
+#         return jsonify({'status': 'success', 'message': 'Business info and avatar updated successfully'})
+#     except Exception as e:
+#         return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
+
+
 @main.route('/save_business_info', methods=['POST'])
 def save_business_info():
-    user_email = session.get('user_email')
-    if not user_email:
+    if 'user_email' not in session:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
     
-    data = request.get_json()
+    user_email = session['user_email']
+    data = request.json
+
     try:
-        users_ref = db.collection('users').document(user_email)
-        users_ref.update({
+        # Assuming a Firestore setup; adjust according to your database
+        user_ref = db.collection('users').document(user_email)
+        user_ref.update({
             'businessName': data['businessName'],
             'businessDescription': data['businessDescription'],
-            # Assuming avatar is saved beforehand and URL is sent as part of the request
-            'avatar': data.get('avatar')
+            'avatar': data.get('avatar', '')
         })
-        return jsonify({'status': 'success', 'message': 'Business info and avatar updated successfully'})
+        return jsonify({'status': 'success', 'message': 'Business info saved successfully'})
     except Exception as e:
-        return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
-
-
-
+        print(f"Failed to save business info: {e}")  # Log the error
+        return jsonify({'status': 'error', 'message': 'Failed to save business info.'}), 500
 
 
 

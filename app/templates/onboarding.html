@@ -197,10 +197,6 @@
 
     <script>
 
-        // function handleAvatarClick() {
-        //                 document.getElementById('avatar-upload').click();
-        //             }
-
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace(); // Initialize icons
            
@@ -261,6 +257,12 @@
                     window.location.href = "/"; // Redirect to login page
                 }).catch(error => console.error('Error:', error));
             }
+
+
+            function handleAvatarClick() {
+                document.getElementById('avatar-upload').click();
+            }
+
 
             document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
             document.getElementById('closeButton').addEventListener('click', closeOnboarding);
