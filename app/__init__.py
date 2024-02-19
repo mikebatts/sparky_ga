@@ -36,6 +36,8 @@ import firebase_admin
 from firebase_admin import credentials, storage, firestore
 from app.config import FLASK_APP_SECRET_KEY
 import os
+import json
+import base64
 
 # Decode Firebase credentials from the base64 environment variable
 encoded_credentials = os.getenv('FIREBASE_CREDENTIALS_BASE64')
