@@ -608,8 +608,8 @@ body {
     line-height: 1.6;
     margin: 0;
     text-align: center;
-    min-height: 100%; /* To ensure it covers at least the entire viewport */
-    display: block;
+    /* min-height: 100%; */
+    display: flex;
 }
 
 code, pre {
@@ -632,7 +632,7 @@ code, pre {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: calc(100vh - 0px); /* Adjust height to account for navbar height */
+    /* height: calc(100vh - 0px);  */
     width: 100%;
     padding: 16px;
     box-sizing: border-box;
