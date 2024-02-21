@@ -256,43 +256,92 @@ def onboarding():
 #         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
+# @main.route('/upload_avatar', methods=['POST'])
+# def upload_avatar():
+#     logging.info("Starting avatar upload process.")
+#     if 'avatar' not in request.files:
+#         logging.error("No 'avatar' in request.files")
+#         return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
+    
+#     avatar_file = request.files['avatar']
+#     if avatar_file.filename == '':
+#         logging.error("No file selected for uploading")
+#         return jsonify({'status': 'error', 'message': 'No file selected for uploading'}), 400
+    
+#     try:
+#         filename = secure_filename(avatar_file.filename)
+#         logging.info(f"Attempting to upload file: {filename}")
+#         in_memory_file = io.BytesIO()
+#         avatar_file.save(in_memory_file)
+#         in_memory_file.seek(0)  # Important: move to the start of the BytesIO object!
+        
+#         try:
+#             # Specify the bucket name explicitly during the upload
+#             bucket_name = 'sparky-408720.appspot.com'  # Directly using the bucket name from your environment configuration
+#             bucket = firebase_admin.storage.bucket(bucket_name)
+#             blob = bucket.blob(f'avatars/{session.get("user_email", "unknown_user")}/{filename}')
+#             blob.upload_from_file(in_memory_file, content_type=avatar_file.content_type)
+#             blob.make_public()
+#             avatar_url = blob.public_url
+#             logging.info(f"File uploaded successfully to: {avatar_url}")
+#             return jsonify({'status': 'success', 'avatarURL': avatar_url})
+#         except Exception as firebase_error:
+#             logging.error(f"Firebase upload error: {firebase_error}", exc_info=True)
+#             return jsonify({'status': 'error', 'message': 'Firebase upload failed'}), 500
+#     except Exception as e:
+#         logging.error(f"General error in upload: {e}", exc_info=True)
+#         return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+
+
 @main.route('/upload_avatar', methods=['POST'])
 def upload_avatar():
     logging.info("Starting avatar upload process.")
+    
+    # Check if the 'avatar' file part is present in the request
     if 'avatar' not in request.files:
         logging.error("No 'avatar' in request.files")
         return jsonify({'status': 'error', 'message': 'No avatar file provided'}), 400
-    
+
     avatar_file = request.files['avatar']
+
+    # Ensure an actual file is selected for upload
     if avatar_file.filename == '':
         logging.error("No file selected for uploading")
         return jsonify({'status': 'error', 'message': 'No file selected for uploading'}), 400
-    
+
     try:
+        # Securely name the file
         filename = secure_filename(avatar_file.filename)
         logging.info(f"Attempting to upload file: {filename}")
+
+        # Create an in-memory file object from the uploaded file
         in_memory_file = io.BytesIO()
         avatar_file.save(in_memory_file)
-        in_memory_file.seek(0)  # Important: move to the start of the BytesIO object!
+        in_memory_file.seek(0)  # Reset file pointer to the start
+
+        # Specify the bucket name explicitly during the upload
+        bucket_name = 'sparky-408720.appspot.com'
+        bucket = firebase_admin.storage.bucket(bucket_name)
+
+        # Construct the blob's location in the bucket
+        blob = bucket.blob(f'avatars/{session.get("user_email", "unknown_user")}/{filename}')
         
-        try:
-            # Specify the bucket name explicitly during the upload
-            bucket_name = 'sparky-408720.appspot.com'  # Directly using the bucket name from your environment configuration
-            bucket = firebase_admin.storage.bucket(bucket_name)
-            blob = bucket.blob(f'avatars/{session.get("user_email", "unknown_user")}/{filename}')
-            blob.upload_from_file(in_memory_file, content_type=avatar_file.content_type)
-            blob.make_public()
-            avatar_url = blob.public_url
-            logging.info(f"File uploaded successfully to: {avatar_url}")
-            return jsonify({'status': 'success', 'avatarURL': avatar_url})
-        except Exception as firebase_error:
-            logging.error(f"Firebase upload error: {firebase_error}", exc_info=True)
-            return jsonify({'status': 'error', 'message': 'Firebase upload failed'}), 500
-    except Exception as e:
-        logging.error(f"General error in upload: {e}", exc_info=True)
-        return jsonify({'status': 'error', 'message': 'Failed to upload avatar'}), 500
+        # Upload the file to Firebase Storage
+        blob.upload_from_file(in_memory_file, content_type=avatar_file.content_type)
+        blob.make_public()  # Make the file publicly accessible
 
+        # Retrieve the file's public URL
+        avatar_url = blob.public_url
+        logging.info(f"File uploaded successfully to: {avatar_url}")
 
+        # Update session with the new avatar URL
+        session['user_avatar'] = avatar_url
+
+        # Return the URL to the client
+        return jsonify({'status': 'success', 'avatarURL': avatar_url})
+    except Exception as firebase_error:
+        logging.error(f"Firebase upload error: {firebase_error}", exc_info=True)
+        return jsonify({'status': 'error', 'message': 'Firebase upload failed'}), 500
 
 
 
@@ -360,30 +409,52 @@ def upload_avatar():
 #         return jsonify({'status': 'success', 'message': 'Business info and avatar updated successfully'})
 #     except Exception as e:
 #         return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
-
+    
 
 @main.route('/save_business_info', methods=['POST'])
 def save_business_info():
     if 'user_email' not in session:
         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-    
-    user_email = session['user_email']
-    data = request.json  # Ensure this is correctly parsing JSON body
 
-    if not data.get('businessName'):  # Check if businessName is provided
-        return jsonify({'status': 'error', 'message': 'Business name is required'}), 400
+    user_email = session['user_email']
+    data = request.json  # Assuming JSON payload
+
+    business_name = data.get('businessName')
+    business_description = data.get('businessDescription')
+    avatar_url = data.get('avatar')  # This should be passed from the client after successful upload
 
     try:
         user_ref = db.collection('users').document(user_email)
         user_ref.update({
-            'businessName': data['businessName'],
-            'businessDescription': data.get('businessDescription', ''),
-            'avatar': data.get('avatar', '')
+            'businessName': business_name,
+            'businessDescription': business_description,
+            'avatar': avatar_url  # Save the avatar URL here
         })
-        return jsonify({'status': 'success', 'message': 'Business info saved successfully'})
+
+        session['business_name'] = business_name  # Update session with the new business name
+
+        return jsonify({'status': 'success', 'message': 'Business info and avatar URL updated successfully'})
     except Exception as e:
-        logging.error(f"Failed to save business info: {e}")
-        return jsonify({'status': 'error', 'message': 'Failed to save business info'}), 500
+        return jsonify({'status': 'error', 'message': 'Failed to update business info and avatar URL'}), 500
+
+
+@main.route('/save_notification_settings', methods=['POST'])
+def save_notification_settings():
+    if 'user_email' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+    user_email = session['user_email']
+    data = request.json
+
+    try:
+        # Assuming 'notificationSettings' field in your Firestore document
+        db.collection('users').document(user_email).update({
+            'notificationSettings': data['reportFrequency']
+        })
+        return jsonify({'status': 'success', 'message': 'Notification settings updated successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
 
 
 
@@ -396,44 +467,150 @@ def close_onboarding():
 
 
 
+@main.route('/update_onboarding_info', methods=['POST'])
+def update_onboarding_info():
+    if 'user_email' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+    user_email = session['user_email']
+    data = request.get_json()
+
+    try:
+        user_ref = db.collection('users').document(user_email)
+        user_ref.update({
+            'goals': data['goals'],
+            'preferences': data['preferences']
+        })
+        return jsonify({'status': 'success', 'message': 'Onboarding info updated successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to update onboarding info'}), 500
+
+
+
+
+
+# @main.route('/complete_onboarding', methods=['POST'])
+# def complete_onboarding():
+#     try:
+#         data = request.get_json()
+#         print("Goals received:", data.get('goals'))
+#         print("Preferences received:", data.get('preferences'))
+#         print(f"Received onboarding data: {data}")  # Ensure this prints the expected data structure
+
+#         user_email = session.get('user_email')
+#         if not user_email:
+#             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+#         # Assuming 'data' contains 'businessName', 'businessDescription', 'avatar', 'goals', 'preferences', and 'reportFrequency'
+#         # Verify and sanitize data as necessary before updating in Firestore
+#         users_ref = db.collection('users').document(user_email)
+
+#         # Assuming 'avatar' is included in the data payload from the client
+#         avatar_url = data.get('avatar')
+        
+#         # Update or set the user document with new onboarding data
+#         # Use set for a new document or update for an existing document with merge=True to preserve existing fields
+#         users_ref.set({
+#             'businessName': data.get('businessName'),
+#             'businessDescription': data.get('businessDescription'),
+#             'avatar': avatar_url,
+#             'goals': data.get('goals', []),
+#             'preferences': data.get('preferences', []),
+#             'reportFrequency': data.get('reportFrequency', []),
+#             'onboarding_completed': True  # Mark the onboarding process as completed
+#         }, merge=True)
+
+#         # Update session if needed, particularly if you're storing any of these new details in the session
+#         # Update session
+#         session['user_avatar'] = avatar_url
+#         session['onboarding_completed'] = True
+        
+#         return jsonify({'status': 'success', 'message': 'Onboarding completed successfully'})
+#     except Exception as e:
+#         logging.error(f"Error in complete_onboarding: {e}")
+#         return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
+
+
+# @main.route('/complete_onboarding', methods=['POST'])
+# def complete_onboarding():
+#     try:
+#         data = request.get_json()
+#         user_email = session['user_email']
+#         if not user_email:
+#             return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+#         user_ref = db.collection('users').document(user_email)
+#         user_ref.update(data | {'onboarding_completed': True})
+
+#         # Update session data
+#         session['onboarding_completed'] = True
+#         session['user_avatar'] = data.get('avatar', session.get('user_avatar', ''))
+#         session['user_business_name'] = data.get('businessName', session.get('user_business_name', ''))
+
+#         return jsonify({'status': 'success', 'message': 'Onboarding completed successfully'})
+#     except Exception as e:
+#         return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
 
 
 @main.route('/complete_onboarding', methods=['POST'])
 def complete_onboarding():
+    user_email = session.get('user_email')
+    if not user_email:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
     try:
-        data = request.get_json()
-        print("Goals received:", data.get('goals'))
-        print("Preferences received:", data.get('preferences'))
-        print(f"Received onboarding data: {data}")  # Ensure this prints the expected data structure
-
-        user_email = session.get('user_email')
-        if not user_email:
-            return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
-
-        # Assuming 'data' contains 'businessName', 'businessDescription', 'avatar', 'goals', 'preferences', and 'reportFrequency'
-        # Verify and sanitize data as necessary before updating in Firestore
-        users_ref = db.collection('users').document(user_email)
-        
-        # Update or set the user document with new onboarding data
-        # Use set for a new document or update for an existing document with merge=True to preserve existing fields
-        users_ref.set({
-            'businessName': data.get('businessName'),
-            'businessDescription': data.get('businessDescription'),
-            'avatar': data.get('avatar'),
-            'goals': data.get('goals', []),
-            'preferences': data.get('preferences', []),
-            'reportFrequency': data.get('reportFrequency', []),
-            'onboarding_completed': True  # Mark the onboarding process as completed
-        }, merge=True)
-
-        # Update session if needed, particularly if you're storing any of these new details in the session
-        session['logged_in'] = True  # Just an example, adjust as per your session management strategy
-
+        db.collection('users').document(user_email).update({'onboarding_completed': True})
+        session['onboarding_completed'] = True  # Update session if needed
         return jsonify({'status': 'success', 'message': 'Onboarding completed successfully'})
     except Exception as e:
-        logging.error(f"Error in complete_onboarding: {e}")
-        return jsonify({'status': 'error', 'message': 'An error occurred while processing your request.'}), 500
+        return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
 
+
+@main.route('/update_session_onboarding', methods=['POST'])
+def update_session_onboarding():
+    if 'user_email' not in session:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+    data = request.get_json()
+    user_email = session['user_email']
+
+    try:
+        # Update the Firestore document as needed
+        db.collection('users').document(user_email).update({
+            'businessName': data['businessName'],
+            'onboarding_completed': data['onboarding_completed']
+        })
+
+        # Update session variables immediately for business name and onboarding completion flag
+        session['user_business_name'] = data['businessName']
+        session['onboarding_completed'] = data['onboarding_completed']
+
+        return jsonify({'status': 'success', 'message': 'Session updated successfully'})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': 'Failed to update session'}), 500
+
+    
+# @main.route('/complete_onboarding', methods=['POST'])
+# def complete_onboarding():
+#     if 'user_email' not in session:
+#         return jsonify({'status': 'error', 'message': 'User not logged in'}), 401
+
+#     data = request.get_json()
+#     user_email = session['user_email']
+
+#     try:
+#         # Update Firestore document
+#         db.collection('users').document(user_email).update({
+#             'businessName': data['businessName'],
+#             'onboarding_completed': data['onboarding_completed']
+#         })
+
+#         # Update Flask session
+#         session['user_business_name'] = data['businessName']
+#         session['onboarding_completed'] = data['onboarding_completed']
+
+#         return jsonify({'status': 'success', 'message': 'Onboarding completed successfully'})
+#     except Exception as e:
+#         return jsonify({'status': 'error', 'message': 'An error occurred'}), 500
 
 
 

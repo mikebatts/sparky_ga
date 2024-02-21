@@ -170,7 +170,7 @@
                 </div>
                 </div>
                 <div class="edit-CTA-container">
-                    <button id="notifications-next">Next</button>
+                    <button onclick="saveNotificationSettings()" id="notifications-next">Next</button>
                 </div>
             </div>
             </div>
@@ -250,7 +250,11 @@
                 showStep(currentStep);
             };
 
-            function previewAvatar(event) {
+            window.handleAvatarClick = function() {
+                document.getElementById('avatar-upload').click();
+            };
+
+            window.previewAvatar = function(event) {
                 const file = event.target.files[0];
                 if (file) {
                     const reader = new FileReader();
@@ -259,7 +263,65 @@
                     };
                     reader.readAsDataURL(file);
                 }
-            }
+            };
+
+            window.saveGoalsAndPreferences = function(callback) {
+                // Extract the full string for each goal and preference, excluding the number and icon
+                const goals = Array.from(document.getElementById('goalsList').querySelectorAll('.draggable-item'))
+                                    .map(item => item.innerText.split('\n')[0].trim().replace(/^\d+\s*/, ''));
+                const preferences = Array.from(document.getElementById('preferencesList').querySelectorAll('.draggable-item'))
+                                        .map(item => item.innerText.split('\n')[0].trim().replace(/^\d+\s*/, ''));
+
+                fetch('/update_onboarding_info', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ goals, preferences })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Goals and preferences saved successfully.');
+                        if(callback) callback();
+                    } else {
+                        console.error('Failed to save goals and preferences.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            };
+
+
+            // Ensure the function is called when the "Next" button for the preferences step is clicked
+            document.getElementById('preferences-next-button').addEventListener('click', function() {
+                window.saveGoalsAndPreferences(() => window.nextStep(5));
+            });
+
+
+
+            window.saveNotificationSettings = function() {
+                const reportFrequency = {
+                    daily: document.getElementById('report-daily').checked,
+                    weekly: document.getElementById('report-weekly').checked,
+                    monthly: document.getElementById('report-monthly').checked,
+                };
+
+                fetch('/save_notification_settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({reportFrequency})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Notification settings saved successfully.');
+                        nextStep(6); // Ensure nextStep is correctly defined and moves to the next step
+                    } else {
+                        console.error('Failed to save notification settings.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            };
 
             function closeOnboarding() {
                 fetch('/abandon_onboarding', {
@@ -270,20 +332,59 @@
             }
 
 
-            function handleAvatarClick() {
-                document.getElementById('avatar-upload').click();
-            }
-
+          
 
             document.getElementById('onboard-nav-button').addEventListener('click', goToPreviousStep);
             document.getElementById('closeButton').addEventListener('click', closeOnboarding);
-            document.getElementById('avatar-button').addEventListener('click', () => handleAvatarClick());
-            document.getElementById('business-info-next').addEventListener('click', () => saveBusinessInfo(() => nextStep(3)));
+            document.getElementById('business-info-next').addEventListener('click', function() {
+                // Ensure the avatar has been uploaded and we have the URL
+                const avatarUploadInput = document.getElementById('avatar-upload');
+                if (avatarUploadInput.files.length > 0) {
+                    // Upload the avatar first
+                    uploadAvatar(function(avatarURL) {
+                        // Once the avatar is uploaded, save the business info with the avatar URL
+                        saveBusinessInfo(avatarURL, function() {
+                            nextStep(3); // Proceed to the next step after saving business info
+                        });
+                    });
+                } else {
+                    // If no avatar is selected, proceed without uploading an avatar
+                    saveBusinessInfo(null, function() {
+                        nextStep(3);
+                    });
+                }
+            });
+            // document.getElementById('avatar-button').addEventListener('click', () => handleAvatarClick());
+            // document.getElementById('business-info-next').addEventListener('click', () => saveBusinessInfo(() => nextStep(3)));
             document.getElementById('preferences-next').addEventListener('click', () => saveGoalsAndPreferences());
-            document.getElementById('notifications-next').addEventListener('click', () => saveNotificationSettings());
+            document.getElementById('notifications-next').addEventListener('click', function() {
+                saveNotificationSettings(() => nextStep(6));
+            });
 
             
+            function uploadAvatar(callback) {
+                const file = document.getElementById('avatar-upload').files[0];
+                let formData = new FormData();
+                formData.append('avatar', file);
 
+                fetch('/upload_avatar', {
+                    method: 'POST',
+                    body: formData,
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.status === 'success' && data.avatarURL) {
+                        callback(data.avatarURL); // Pass the avatar URL to the callback
+                    } else {
+                        console.error('Failed to upload avatar');
+                        callback(null); // Handle error, proceed without avatar URL
+                    }
+                })
+                .catch(error => {
+                    console.error('Error uploading avatar:', error);
+                    callback(null); // Handle error, proceed without avatar URL
+                });
+            }
         
 
 
@@ -394,30 +495,35 @@
 
 
             // Functions to save business info, goals, preferences, and notification settings
-            function saveBusinessInfo(callback) {
-                // Now includes avatar in the data sent to the server
+            // Assuming this function is called after the avatar has been successfully uploaded
+            function saveBusinessInfo(avatarURL, callback) {
+                const businessInfo = {
+                    businessName: document.getElementById('business-name').value,
+                    businessDescription: document.getElementById('business-description').value,
+                    avatar: avatarURL // Use the avatar URL from the uploadAvatar function
+                };
+
                 fetch('/save_business_info', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({
-                        businessName: onboardingData.businessName,
-                        businessDescription: onboardingData.businessDescription,
-                        avatar: onboardingData.avatar, // Now includes avatar
-                    }),
+                    body: JSON.stringify(businessInfo),
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        console.log('Business info saved successfully.');
-                        if(callback) callback();
+                        console.log('Business info and avatar URL saved successfully.');
+                        if (callback) callback();
                     } else {
-                        console.error('Failed to save business info.');
+                        console.error('Failed to save business info and avatar URL.');
                     }
                 })
-                .catch(error => console.error('Error saving business info:', error));
+                .catch(error => console.error('Error:', error));
             }
+
+
+
 
         
             // function saveGoalsAndPreferences() {
@@ -426,50 +532,74 @@
             //     nextStep(5); // Proceed to next step after saving
             // }
 
-            function saveGoalsAndPreferences(callback) {
-                const goals = Array.from(document.getElementById('goalsList').querySelectorAll('.draggable-item'))
-                                .map((item, index) => ({ rank: index + 1, goal: item.textContent.trim().split(" ")[1] }));
-                const preferences = Array.from(document.getElementById('preferencesList').querySelectorAll('.draggable-item'))
-                                        .map((item, index) => ({ rank: index + 1, preference: item.textContent.trim().split(" ")[1] }));
+            // function saveGoalsAndPreferences(callback) {
+            //     const goals = Array.from(document.getElementById('goalsList').querySelectorAll('.draggable-item'))
+            //                         .map((item, index) => item.textContent.trim().split(" ")[1]);
+            //     const preferences = Array.from(document.getElementById('preferencesList').querySelectorAll('.draggable-item'))
+            //                             .map((item, index) => item.textContent.trim().split(" ")[1]);
 
-                fetch('/update_onboarding_info', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ goals, preferences }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log('Goals and preferences saved successfully.');
-                        if(callback) callback(); // Proceed to next step
-                    } else {
-                        console.error('Failed to save goals and preferences.');
-                    }
-                })
-                .catch(error => console.error('Error saving goals and preferences:', error));
-            }
+            //     fetch('/update_onboarding_info', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify({ goals, preferences })
+            //     })
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         if (data.status === 'success') {
+            //             console.log('Goals and preferences saved successfully.');
+            //             if(callback) callback();
+            //         } else {
+            //             console.error('Failed to save goals and preferences.');
+            //         }
+            //     })
+            //     .catch(error => console.error('Error:', error));
+            // }
+
 
             // Adjust button event listener if needed
-            document.getElementById('preferences-next-button').addEventListener('click', function() {
-                saveGoalsAndPreferences(() => nextStep(5));
-            });
+            // document.getElementById('preferences-next-button').addEventListener('click', function() {
+            //     saveGoalsAndPreferences(() => nextStep(5));
+            // });
 
         
-            function saveNotificationSettings() {
-                onboardingData.reportFrequency = [];
-                if (document.getElementById('report-daily').checked) onboardingData.reportFrequency.push('Daily');
-                if (document.getElementById('report-weekly').checked) onboardingData.reportFrequency.push('Weekly');
-                if (document.getElementById('report-monthly').checked) onboardingData.reportFrequency.push('Monthly');
-                nextStep(6); // Proceed to the final step
-            }
+            // function saveNotificationSettings() {
+            //     const reportFrequency = {
+            //         daily: document.getElementById('report-daily').checked,
+            //         weekly: document.getElementById('report-weekly').checked,
+            //         monthly: document.getElementById('report-monthly').checked,
+            //     };
 
-         
+            //     fetch('/save_notification_settings', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify(reportFrequency),
+            //     })
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         if (data.status === 'success') {
+            //             console.log('Notification settings saved successfully.');
+            //             nextStep(6); // Proceed to the next step
+            //         } else {
+            //             console.error('Failed to save notification settings.');
+            //         }
+            //     })
+            //     .catch(error => console.error('Error:', error));
+            // }
 
-        
+
             function completeOnboarding() {
-                fetch('/complete_onboarding', {
+                // Construct the data object with businessName and onboarding_completed flag
+                const onboardingData = {
+                    businessName: document.getElementById('business-name').value,
+                    onboarding_completed: true
+                };
+
+                // Send a POST request to a Flask route dedicated to updating the session
+                fetch('/update_session_onboarding', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -479,17 +609,64 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        // Redirect or inform the user of successful onboarding
-                        alert('Onboarding completed successfully!');
-                        window.location.href = "{{ url_for('main.select_property') }}"; // Adjust this to your dashboard or relevant page
+                        console.log('Session updated successfully!');
+                        window.location.href = "{{ url_for('main.select_property') }}";
                     } else {
-                        alert('Failed to complete onboarding. Please try again.');
+                        console.error('Failed to update session.');
                     }
                 })
-                .catch((error) => {
-                    console.error('Error:', error);
-                });
+                .catch(error => console.error('Error:', error));
             }
+
+
+
+            // function completeOnboarding() {
+            //     onboardingData.businessName = document.getElementById('business-name').value;
+            //     onboardingData.onboarding_completed = true; // Ensure this flag is set
+
+            //     fetch('/complete_onboarding', {
+            //         method: 'POST',
+            //         headers: {'Content-Type': 'application/json'},
+            //         body: JSON.stringify(onboardingData)
+            //     })
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         if (data.status === 'success') {
+            //             console.log('Onboarding completed successfully!');
+            //             window.location.href = "{{ url_for('main.select_property') }}";
+            //         } else {
+            //             console.error('Failed to complete onboarding.');
+            //         }
+            //     })
+            //     .catch(error => console.error('Error:', error));
+            // }
+
+
+         
+
+        
+            // function completeOnboarding() {
+            //     fetch('/complete_onboarding', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify(onboardingData)
+            //     })
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         if (data.status === 'success') {
+            //             // Redirect or inform the user of successful onboarding
+            //             alert('Onboarding completed successfully!');
+            //             window.location.href = "{{ url_for('main.select_property') }}"; // Adjust this to your dashboard or relevant page
+            //         } else {
+            //             alert('Failed to complete onboarding. Please try again.');
+            //         }
+            //     })
+            //     .catch((error) => {
+            //         console.error('Error:', error);
+            //     });
+            // }
         
             
         
