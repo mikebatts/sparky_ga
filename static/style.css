@@ -1,3 +1,12 @@
+:root {
+    --dynamic-vh: 1vh;
+}
+
+.container, .login-container, .onboarding-modal, .edit-modal {
+    height: calc(var(--dynamic-vh, 1vh) * 100);
+}
+
+
 @font-face {
     font-family: 'Geist Sans';
     src: url('../fonts/GeistSans-Regular.woff2') format('woff2'),
@@ -607,7 +616,7 @@ code, pre {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: calc(100vh - 92px); /* Adjust height to account for navbar height */
+    height: calc(100vh - 56px); /* Adjust height to account for navbar height */
     width: 100%;
     padding: 16px;
     box-sizing: border-box;
