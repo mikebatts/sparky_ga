@@ -591,15 +591,46 @@
             // }
 
 
+            // function completeOnboarding() {
+            //     // Construct the data object with businessName and onboarding_completed flag
+            //     const onboardingData = {
+            //         businessName: document.getElementById('business-name').value,
+            //         onboarding_completed: true
+            //     };
+
+            //     // Send a POST request to a Flask route dedicated to updating the session
+            //     fetch('/update_session_onboarding', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify(onboardingData)
+            //     })
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         if (data.status === 'success') {
+            //             console.log('Session updated successfully!');
+            //             window.location.href = "{{ url_for('main.select_property') }}";
+            //         } else {
+            //             console.error('Failed to update session.');
+            //         }
+            //     })
+            //     .catch(error => console.error('Error:', error));
+            // }
+
             function completeOnboarding() {
-                // Construct the data object with businessName and onboarding_completed flag
+                const businessName = document.getElementById('business-name').value;
+                const businessDescription = document.getElementById('business-description').value;
+                // Assuming avatarURL is stored in onboardingData after upload
+                const avatarURL = onboardingData.avatar;
+
                 const onboardingData = {
-                    businessName: document.getElementById('business-name').value,
-                    onboarding_completed: true
+                    businessName: businessName,
+                    businessDescription: businessDescription,
+                    avatar: avatarURL,
                 };
 
-                // Send a POST request to a Flask route dedicated to updating the session
-                fetch('/update_session_onboarding', {
+                fetch('/complete_onboarding', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -609,14 +640,15 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === 'success') {
-                        console.log('Session updated successfully!');
-                        window.location.href = "{{ url_for('main.select_property') }}";
+                        console.log('Onboarding completed successfully!');
+                        // Redirect or handle UI changes
                     } else {
-                        console.error('Failed to update session.');
+                        console.error('Failed to complete onboarding.');
                     }
                 })
                 .catch(error => console.error('Error:', error));
             }
+
 
 
 
