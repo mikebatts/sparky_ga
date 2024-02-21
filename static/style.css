@@ -607,7 +607,7 @@ code, pre {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: calc(100vh - 56px); /* Adjust height to account for navbar height */
+    height: calc(100vh - 92px); /* Adjust height to account for navbar height */
     width: 100%;
     padding: 16px;
     box-sizing: border-box;
