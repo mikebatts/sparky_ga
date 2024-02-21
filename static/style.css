@@ -330,7 +330,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Keep this to space out the content and CTA */
-    height: 100%;
+    height: 100vh;
     padding: 16px;
 }
 
@@ -372,7 +372,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 100%;
+    /* height: 100%; */
 }
 
 .biz-info-wrapper {
@@ -610,6 +610,7 @@ body {
     text-align: center;
     /* min-height: 100%; */
     display: flex;
+    flex-direction: column;
 }
 
 code, pre {
@@ -694,7 +695,7 @@ code, pre {
 }
 
 .CTA-container {
-    /* Stick to the bottom */
+    margin-bottom: 56px;
 }
 
 
