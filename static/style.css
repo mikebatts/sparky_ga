@@ -2,6 +2,11 @@
     --dynamic-vh: 1vh;
 }
 
+body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
 .container, .login-container, .onboarding-modal, .edit-modal {
     height: calc(var(--dynamic-vh, 1vh) * 100);
 }
