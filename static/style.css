@@ -1053,6 +1053,7 @@ footer {
         text-align: center;
         min-height: 100vh; /* Ensure it covers at least the entire viewport */
         min-height: -webkit-fill-available;
+        position: relative;
 
     }
 
