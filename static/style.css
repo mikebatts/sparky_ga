@@ -306,7 +306,13 @@ body {
 }
 
 
-
+.access-denied-container {
+    padding: 0px 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
 
 
 .onboarding-modal {
@@ -623,6 +629,7 @@ body {
     text-align: center;
     min-height: -webkit-fill-available;
     position: absolute;
+    width: 100%;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -709,9 +716,27 @@ code, pre {
 
 }
 
-/* .CTA-container {
-    margin-bottom: 56px;
-} */
+.beta-access-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+}
+
+.CTA-beta-container {
+    margin-bottom: 16px;
+}
+
+.beta-access-content img {
+    width: 116px;
+    height: 116px;
+}
+
+.denied-vis {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 16px;
+}
 
 
 .login-vis {
@@ -898,7 +923,7 @@ button, input[type="submit"] {
     border-radius: 8px;
     border: none;
     width: 100%;
-    background-color: #000;
+    background-color: #1e1e1e;
     color: white;
     cursor: pointer;
     font-size: 1em;
@@ -1129,6 +1154,11 @@ footer {
 
     .edit-modal {
         width: 800px;
+    }
+
+    .beta-access-content {
+        height: auto;
+        padding-bottom: 32px;
     }
 
     h1 {
