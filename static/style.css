@@ -621,8 +621,9 @@ body {
     line-height: 1.6;
     margin: 0;
     text-align: center;
-    min-height: 100%;
     min-height: -webkit-fill-available;
+    position: absolute;
+    height: 100%;
     display: flex;
     flex-direction: column;
 }
@@ -784,7 +785,7 @@ ul, p, select, label {
 
 /* Form styling */
 form {
-    margin: 20px 0;
+    /* margin: 20px 0; */
     display: flex;
     flex-direction: column;
     align-items: center;
