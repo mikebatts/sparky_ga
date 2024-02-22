@@ -483,6 +483,10 @@ body {
     background-position: center; /* Center the image */
 }
 
+#avatar-placeholder {
+    background-image: url('/static/images/avi-placeholder.png');
+}
+
 #avatar-button {
     padding: 16px;
     width: 108px;
@@ -858,6 +862,25 @@ select {
     pointer-events: none;
 }
 
+button, input[type="submit"], .button-disabled {
+    transition: background-color 140ms ease-in-out, color 140ms ease-in-out;
+}
+
+.button-disabled {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: rgba(0, 0, 0, 0.24);
+    cursor: not-allowed;
+}
+
+/* Make sure your disabled button styling is specific enough to override any other button styles */
+.onboarding-CTA-container button.button-disabled {
+    background-color: rgba(0, 0, 0, 0.08) !important; /* Using !important to ensure override */
+    color: rgba(0, 0, 0, 0.24) !important;
+    cursor: not-allowed;
+}
+
+
+
 
 button, input[type="submit"] {
     padding: 16px;
@@ -870,6 +893,7 @@ button, input[type="submit"] {
     font-size: 1em;
     font-weight: 600;
 }
+
 
 
 

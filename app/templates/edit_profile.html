@@ -47,13 +47,13 @@
                             <!-- Business Name Input -->
                             <div class="form-group">
                                 <p style="font-weight: 500;" class="edit-subhead" for="business-name">Name</p>
-                                <input type="text" id="business-name" name="business_name" value="{{ user_data['businessName'] if user_data['businessName'] else '' }}" placeholder="Enter your business name">
+                                <input type="text" id="business-name" name="business_name" value="{{ user_data['businessName'] if user_data['businessName'] else '' }}" placeholder="Enter your business name" required>
                             </div>
 
                             <!-- Business Description Input -->
                             <div class="form-group">
                                 <p style="font-weight: 500;" class="edit-subhead" for="business-description">Description</p>
-                                <textarea id="business-description" name="business_description">{{ user_data['businessDescription'] if user_data['businessDescription'] else '' }}</textarea>
+                                <textarea id="business-description" name="business_description" required>{{ user_data['businessDescription'] if user_data['businessDescription'] else '' }}</textarea>
                             </div>
                         </div>
 
@@ -353,7 +353,7 @@
         }
 
 
-        
+
         function storeGoalsAndPreferences() {
             onboardingData.goals = Array.from(document.getElementById('goalsList').children)
                                         .map(item => item.textContent.trim().replace(/^\d+\s/, ''));

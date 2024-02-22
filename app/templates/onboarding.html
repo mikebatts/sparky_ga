@@ -75,13 +75,13 @@
                             <!-- Business Name Input -->
                             <div class="form-group">
                                 <p for="business-name">Name</p>
-                                <input type="text" id="business-name" name="business_name" placeholder="Enter your business name">
+                                <input type="text" id="business-name" name="business_name" placeholder="Enter your business name" required>
                             </div>
 
                             <!-- Business Description Input -->
                             <div class="form-group">
                                 <p for="business-description">Description</p>
-                                <textarea id="business-description" name="business_description" placeholder="Describe your business"></textarea>
+                                <textarea id="business-description" name="business_description" placeholder="Describe your business" required></textarea>
                             </div>
                         </div>
 
@@ -199,6 +199,37 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace(); // Initialize icons
+
+            const businessNameInput = document.getElementById('business-name');
+            const businessDescriptionInput = document.getElementById('business-description');
+            const businessInfoNextButton = document.getElementById('business-info-next');
+
+            // Initially disable the Next button until conditions are met
+            businessInfoNextButton.disabled = true;
+
+            function updateNextButtonState() {
+                const isBusinessNameFilled = businessNameInput.value.trim() !== '';
+                const isBusinessDescriptionFilled = businessDescriptionInput.value.trim() !== '';
+
+                // Enable or disable the Next button based on whether both fields are filled
+                const isFormValid = isBusinessNameFilled && isBusinessDescriptionFilled;
+                businessInfoNextButton.disabled = !isFormValid;
+
+                // Toggle the button-disabled class based on the form validity
+                if (isFormValid) {
+                    businessInfoNextButton.classList.remove('button-disabled');
+                } else {
+                    businessInfoNextButton.classList.add('button-disabled');
+                }
+            }
+
+            // Call the function immediately to set the initial state of the button
+            updateNextButtonState();
+
+            // Attach the event listeners
+            businessNameInput.addEventListener('input', updateNextButtonState);
+            businessDescriptionInput.addEventListener('input', updateNextButtonState);
+        
            
             
         

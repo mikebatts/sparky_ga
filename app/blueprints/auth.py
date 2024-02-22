@@ -134,7 +134,7 @@ def oauth2callback():
             else:
                 user_doc_ref.set({
                     'email': user_email,
-                    'grantedAccess': False,  # Assume new users don't have access by default
+                    'accessGranted': False,  # Assume new users don't have access by default
                     'onboarding_completed': False
                 })
                 redirect_url = url_for('main.no_beta_access')  # Make sure to implement this route

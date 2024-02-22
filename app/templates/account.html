@@ -27,7 +27,7 @@
                     <div class="biz-info-wrapper">
                         <h1>Account</h1>
                         <div class="member-snippet">
-                            <img src="{{ user_data.avatar }}" alt="Avatar" class="user-avatar">
+                            <img src="{{ user_data.avatar if user_data.avatar else url_for('static', filename='images/avi-placeholder.png') }}" alt="Avatar" class="user-avatar">
                             <div class="member-details">
                                 <p class="user-name">{{ user_data.businessName }}</p>
                                 <p class="member-since">Member since {{ user_data.creationDate }}</p>
