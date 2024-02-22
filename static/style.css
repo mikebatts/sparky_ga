@@ -293,10 +293,18 @@ body {
 }
 
 .icon-right {
-    color: #000;
-    font-size: 24px;
-    margin-left: 10px;
+    display: inline-block; /* Or block, depending on your layout */
+    width: 24px; /* Width of your icon */
+    height: 24px; /* Height of your icon */
+    background-image: url('/static/images/sort-icon.png');
+    background-size: contain; /* Or cover, depending on how you want it displayed */
+    background-repeat: no-repeat;
+    background-position: center;
+    vertical-align: middle; /* Aligns icon with your text, if necessary */
+    opacity: 0.5;;
 }
+
+
 
 
 
