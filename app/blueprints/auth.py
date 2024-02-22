@@ -149,7 +149,7 @@ def oauth2callback():
         flash('Invalid token. Please try again.')
         redirect_url = url_for('auth.authorize')
 
-    return redirect(redirect_url)
+    # return redirect(redirect_url)
 
 
 
