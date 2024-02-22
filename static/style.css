@@ -1,11 +1,11 @@
 :root {
     --dynamic-vh: 1vh;
 }
-
+/* 
 body {
     min-height: 100vh;
     min-height: -webkit-fill-available;
-  }
+  } */
 
 .container, .login-container, .onboarding-modal, .edit-modal {
     height: calc(var(--dynamic-vh, 1vh) * 100);
@@ -609,7 +609,7 @@ body {
 
 
 html {
-    height: 100%;
+    height: -webkit-fill-available;
     margin: 0;
 }
 
@@ -622,6 +622,7 @@ body {
     margin: 0;
     text-align: center;
     min-height: 100%;
+    min-height: -webkit-fill-available;
     display: flex;
     flex-direction: column;
 }
@@ -1038,6 +1039,8 @@ footer {
     .ob-html {
         display: flex;
         justify-content: center;
+        height: -webkit-fill-available;
+
     }
 
     .body {
@@ -1048,6 +1051,8 @@ footer {
         margin: 0;
         text-align: center;
         min-height: 100vh; /* Ensure it covers at least the entire viewport */
+        min-height: -webkit-fill-available;
+
     }
 
     .ob-body {
