@@ -179,6 +179,8 @@ def update_profile():
         }
 
         users_ref.update(update_data)
+        session['user_business_name'] = data.get('businessName', 'Your Business')  # Update session with new business name
+        session.modified = True  # Mark session as modified to ensure changes are saved
         return jsonify({'status': 'success', 'message': 'Profile updated successfully'})
     except Exception as e:
         logging.error(f"Error updating user profile: {e}")
@@ -485,7 +487,7 @@ def update_onboarding_info():
         })
 
         session['business_name'] = data['businessName']
-        
+
         return jsonify({'status': 'success', 'message': 'Onboarding info updated successfully'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to update onboarding info'}), 500
@@ -576,12 +578,16 @@ def complete_onboarding():
         db.collection('users').document(user_email).update({
             'businessName': data['businessName'],
             'businessDescription': data['businessDescription'],
-            'avatar': data['avatar'],  # Ensure avatar URL is correctly received
+            # 'avatar': data['avatar'], 
             'onboarding_completed': True
         })
 
         # Update session variables
-        session['business_name'] = data['businessName']
+        session['user_business_name'] = data['businessName']  # Ensure this key is consistent
+        logging.debug(f"Session business name set to: {session['user_business_name']}")
+
+        session.modified = True  # Explicitly mark the session as modified
+
         session['onboarding_completed'] = True
 
         print(f"Onboarding completion data successfully saved for {user_email}.")

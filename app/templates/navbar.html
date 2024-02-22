@@ -24,7 +24,7 @@
             {% if session.get('user_avatar') %}
             <div class="dropdown-header">
                 <img src="{{ session['user_avatar'] }}" alt="User Avatar" class="user-avatar">
-                <span>{{ session.get('user_business_name') }}</span>
+                <span id="businessNameDisplay">{{ session.get('user_business_name', 'Your Business') }}</span>
             </div>
             {% endif %}
         

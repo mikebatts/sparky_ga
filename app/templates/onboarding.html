@@ -315,6 +315,16 @@
                 .then(data => {
                     if (data.status === 'success') {
                         console.log('Onboarding completed successfully!');
+                        
+                        // Update the business name in the navbar
+                        // Ensure you have an element with the ID 'businessNameDisplay' in your navbar
+                        const businessNameDisplayElement = document.getElementById('businessNameDisplay');
+                        if (businessNameDisplayElement) {
+                            businessNameDisplayElement.innerText = businessName;
+                        }
+
+                        // Optionally, update any other elements or perform additional actions as needed
+
                         // Redirect to the select_property route upon successful completion
                         window.location.href = "{{ url_for('main.select_property') }}";
                     } else {
@@ -323,6 +333,7 @@
                 })
                 .catch(error => console.error('Error:', error));
             };
+
 
 
 

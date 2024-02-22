@@ -74,7 +74,7 @@ def oauth2callback():
             if user_doc.exists:
                 user_data = user_doc.to_dict()
                 session['user_avatar'] = user_data.get('avatar', '')  # Store avatar URL in session
-                session['user_business_name'] = user_data.get('businessName', 'Your Business')  # Store business name in session
+                session['user_business_name'] = user_data.get('businessName', 'Your Business')
                 redirect_url = url_for('main.select_property')
             else:
                 users_ref.document(user_email).set({
