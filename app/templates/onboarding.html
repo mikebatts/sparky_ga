@@ -188,7 +188,7 @@
                         <p>You’ve successfully set up your profile, goals, and preferences. You may update these settings any time in the app.</p>
                     </div>
                     <div class="onboarding-CTA-container">
-                        <a href="{{ url_for('main.select_property') }}"><button onclick="completeOnboarding()">Get Started</button></a>
+                        <button onclick="completeOnboarding()">Get Started</button>
                     </div>
                 </div>
             </div>
@@ -290,6 +290,40 @@
                 })
                 .catch(error => console.error('Error:', error));
             };
+
+
+            window.completeOnboarding = function() {
+                const businessName = document.getElementById('business-name').value;
+                const businessDescription = document.getElementById('business-description').value;
+                // Check if avatarURL exists in onboardingData and use a default or blank if not
+                const avatarURL = window.onboardingData && window.onboardingData.avatar ? window.onboardingData.avatar : '';
+
+                const onboardingData = {
+                    businessName: businessName,
+                    businessDescription: businessDescription,
+                    avatar: avatarURL,
+                };
+
+                fetch('/complete_onboarding', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(onboardingData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        console.log('Onboarding completed successfully!');
+                        // Redirect to the select_property route upon successful completion
+                        window.location.href = "{{ url_for('main.select_property') }}";
+                    } else {
+                        console.error('Failed to complete onboarding.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            };
+
 
 
             // Ensure the function is called when the "Next" button for the preferences step is clicked
@@ -618,36 +652,38 @@
             //     .catch(error => console.error('Error:', error));
             // }
 
-            function completeOnboarding() {
-                const businessName = document.getElementById('business-name').value;
-                const businessDescription = document.getElementById('business-description').value;
-                // Assuming avatarURL is stored in onboardingData after upload
-                const avatarURL = onboardingData.avatar;
+            // window.completeOnboarding = function() {
+            //     const businessName = document.getElementById('business-name').value;
+            //     const businessDescription = document.getElementById('business-description').value;
+            //     // Assuming avatarURL is stored in onboardingData after upload
+            //     const avatarURL = window.onboardingData.avatar;
 
-                const onboardingData = {
-                    businessName: businessName,
-                    businessDescription: businessDescription,
-                    avatar: avatarURL,
-                };
+            //     const onboardingData = {
+            //         businessName: businessName,
+            //         businessDescription: businessDescription,
+            //         avatar: avatarURL,
+            //     };
 
-                fetch('/complete_onboarding', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(onboardingData)
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        console.log('Onboarding completed successfully!');
-                        // Redirect or handle UI changes
-                    } else {
-                        console.error('Failed to complete onboarding.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
+            //     fetch('/complete_onboarding', {
+            //         method: 'POST',
+            //         headers: {
+            //             'Content-Type': 'application/json',
+            //         },
+            //         body: JSON.stringify(onboardingData)
+            //     })
+            //     .then(response => response.json())
+            //     .then(data => {
+            //         if (data.status === 'success') {
+            //             console.log('Onboarding completed successfully!');
+            //             // Redirect to the select_property route upon successful completion
+            //             window.location.href = "{{ url_for('main.select_property') }}";
+            //         } else {
+            //             console.error('Failed to complete onboarding.');
+            //         }
+            //     })
+            //     .catch(error => console.error('Error:', error));
+            // };
+
 
 
 

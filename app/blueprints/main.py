@@ -483,6 +483,9 @@ def update_onboarding_info():
             'goals': data['goals'],
             'preferences': data['preferences']
         })
+
+        session['business_name'] = data['businessName']
+        
         return jsonify({'status': 'success', 'message': 'Onboarding info updated successfully'})
     except Exception as e:
         return jsonify({'status': 'error', 'message': 'Failed to update onboarding info'}), 500
