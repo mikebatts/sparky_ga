@@ -36,12 +36,13 @@ body {
 }
 
 .alert.error {
-    background-color: #ffcccc;
+    /* background-color: #ffcccc; */
     color: red;
-    padding: 16px;
-    margin: 10px 0;
+    /* padding: 16px; */
+    /* margin: 10px 0; */
     /* border: 1px solid red; */
     border-radius: 8px;
+    font-size: 14px;
 }
 
 .disclaimer a {
@@ -620,7 +621,7 @@ body {
     line-height: 1.6;
     margin: 0;
     text-align: center;
-    /* min-height: 100%; */
+    min-height: 100%;
     display: flex;
     flex-direction: column;
 }
@@ -706,9 +707,9 @@ code, pre {
 
 }
 
-.CTA-container {
+/* .CTA-container {
     margin-bottom: 56px;
-}
+} */
 
 
 .login-vis {

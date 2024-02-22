@@ -95,7 +95,7 @@ def select_property():
     except Exception as e:
         # Logging the error and flashing a message to the user
         logging.error(f"Error fetching GA4 properties: {e}")
-        flash('Error fetching properties. Please try again later.', 'error')
+        flash('Whoops, something happened. Please sign out and sign in again.', 'error')
 
     # Render the 'select_property.html' template with the properties list
     return render_template('select_property.html', properties=properties_list)
