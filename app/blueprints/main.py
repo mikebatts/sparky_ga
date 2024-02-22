@@ -56,6 +56,10 @@ def index():
         return render_template('login.html')  # Show login page if not logged in
 
 
+# In your main.py or wherever you define your routes
+@main.route('/no_beta_access')
+def no_beta_access():
+    return render_template('beta-access.html')
 
 
 @main.route('/select_property')

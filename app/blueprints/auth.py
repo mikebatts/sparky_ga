@@ -46,14 +46,63 @@ def authorize():
     session['state'] = state
     return redirect(authorization_url)
 
+# @auth.route('/oauth2callback')
+# def oauth2callback():
+#     state = session['state']
+
+#     client_config = get_google_client_config()
+#     flow = google_auth_oauthlib.flow.Flow.from_client_config(
+#         client_config=client_config, 
+#         scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'], 
+#         state=state)
+#     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
+
+#     try:
+#         authorization_response = request.url
+#         flow.fetch_token(authorization_response=authorization_response)
+#         credentials = flow.credentials
+#         session['credentials'] = credentials_to_dict(credentials)
+
+#         id_info = google_id_token.verify_oauth2_token(credentials.id_token, requests.Request())
+#         user_email = id_info['email']
+#         session['user_email'] = user_email
+
+#         users_ref = db.collection('users')
+#         user_doc = users_ref.document(user_email).get()
+
+#         if session.pop('initiating_login', None):
+#             if user_doc.exists:
+#                 user_data = user_doc.to_dict()
+#                 session['user_avatar'] = user_data.get('avatar', '')  # Store avatar URL in session
+#                 session['user_business_name'] = user_data.get('businessName', 'Your Business')
+#                 redirect_url = url_for('main.select_property')
+
+#             else:
+#                 users_ref.document(user_email).set({
+#                     'email': user_email,
+#                     'onboarding_completed': False
+#                 })
+#                 redirect_url = url_for('main.onboarding')
+#         else:
+#             flash('Login not initiated by the user.')
+#             redirect_url = url_for('auth.authorize')
+#     except Exception as e:
+#         logging.error(f"Error during OAuth2 callback: {e}")
+#         flash("Authentication error. Please try again.", "error")
+#         return redirect(url_for('auth.authorize'))
+
+#     except ValueError:
+#         flash('Invalid token. Please try again.')
+#         redirect_url = url_for('auth.authorize')
+
 @auth.route('/oauth2callback')
 def oauth2callback():
     state = session['state']
 
     client_config = get_google_client_config()
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
-        client_config=client_config, 
-        scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'], 
+        client_config=client_config,
+        scopes=['openid', 'https://www.googleapis.com/auth/analytics.readonly', 'https://www.googleapis.com/auth/userinfo.email'],
         state=state)
     flow.redirect_uri = url_for('auth.oauth2callback', _external=True)
 
@@ -67,21 +116,28 @@ def oauth2callback():
         user_email = id_info['email']
         session['user_email'] = user_email
 
-        users_ref = db.collection('users')
-        user_doc = users_ref.document(user_email).get()
+        user_doc_ref = db.collection('users').document(user_email)
+        user_doc = user_doc_ref.get()
 
         if session.pop('initiating_login', None):
             if user_doc.exists:
                 user_data = user_doc.to_dict()
-                session['user_avatar'] = user_data.get('avatar', '')  # Store avatar URL in session
-                session['user_business_name'] = user_data.get('businessName', 'Your Business')
-                redirect_url = url_for('main.select_property')
+                if user_data.get('accessGranted', False):
+                    session['user_avatar'] = user_data.get('avatar', '')
+                    session['user_business_name'] = user_data.get('businessName', 'Your Business')
+                    if user_data.get('onboarding_completed', False):
+                        redirect_url = url_for('main.select_property')
+                    else:
+                        redirect_url = url_for('main.onboarding')
+                else:
+                    redirect_url = url_for('main.no_beta_access')  # Make sure to implement this route
             else:
-                users_ref.document(user_email).set({
+                user_doc_ref.set({
                     'email': user_email,
+                    'grantedAccess': False,  # Assume new users don't have access by default
                     'onboarding_completed': False
                 })
-                redirect_url = url_for('main.onboarding')
+                redirect_url = url_for('main.no_beta_access')  # Make sure to implement this route
         else:
             flash('Login not initiated by the user.')
             redirect_url = url_for('auth.authorize')
@@ -89,10 +145,12 @@ def oauth2callback():
         logging.error(f"Error during OAuth2 callback: {e}")
         flash("Authentication error. Please try again.", "error")
         return redirect(url_for('auth.authorize'))
-
     except ValueError:
         flash('Invalid token. Please try again.')
         redirect_url = url_for('auth.authorize')
+
+    return redirect(redirect_url)
+
 
 
 
